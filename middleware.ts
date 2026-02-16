@@ -17,9 +17,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for dev auth bypass
-  const devAuthBypass =
-    process.env.NODE_ENV === 'development' &&
-    process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
+  const devAuthBypass = process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
 
   if (devAuthBypass) {
     return NextResponse.next();

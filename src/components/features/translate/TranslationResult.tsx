@@ -30,14 +30,22 @@ export function TranslationResult({ result }: TranslationResultProps) {
     setTimeout(() => setCopiedUrl(null), 2000);
   };
 
-  const downloadImage = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = getFullUrl(url);
-    link.download = filename;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const downloadImage = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(getFullUrl(url));
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      toast.success('Image downloaded');
+    } catch {
+      toast.error('Failed to download image');
+    }
   };
 
   return (
@@ -164,26 +172,6 @@ export function TranslationResult({ result }: TranslationResultProps) {
             )}
           </TabsContent>
         </Tabs>
-
-        {/* Detected Regions */}
-        {result.regions && result.regions.length > 0 && (
-          <div className="mt-6">
-            <h4 className="mb-3 font-medium">Detected Text Regions</h4>
-            <div className="max-h-48 space-y-2 overflow-y-auto">
-              {result.regions.map((region, index) => (
-                <div
-                  key={index}
-                  className="bg-muted/50 rounded-lg border p-3 text-sm"
-                >
-                  <p className="text-muted-foreground">
-                    {region.original_text}
-                  </p>
-                  <p className="mt-1 font-medium">{region.translated_text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

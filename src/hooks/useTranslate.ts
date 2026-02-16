@@ -66,3 +66,18 @@ export function useCancelBatch() {
     mutationFn: (batchId: string) => translateApi.cancelBatch(batchId),
   });
 }
+
+export function useListBatches(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: ['batches'],
+    queryFn: () => translateApi.listBatches(),
+    enabled: options?.enabled ?? true,
+    refetchInterval: query => {
+      const data = query.state.data;
+      const hasActiveBatches = data?.some(
+        b => b.status === 'pending' || b.status === 'processing'
+      );
+      return hasActiveBatches ? 5000 : false;
+    },
+  });
+}

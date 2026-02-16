@@ -7,7 +7,7 @@ export interface HistoryItem {
   targetLang?: string;
   targetLanguages?: string[];
   result?: TranslateResponse;
-  batchResult?: BatchStatusResponse;
+  batchResult?: BatchStatusResponse; // Only used for type compatibility, batches fetched from backend
 }
 
 const HISTORY_KEY = 'translation_history';
@@ -42,27 +42,6 @@ export const historyStorage = {
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
     } catch (error) {
       console.error('Failed to save translation to history:', error);
-    }
-  },
-
-  addBatchTranslation: (
-    batchResult: BatchStatusResponse,
-    targetLanguages: string[]
-  ): void => {
-    if (typeof window === 'undefined') return;
-    try {
-      const history = historyStorage.getHistory();
-      const newItem: HistoryItem = {
-        id: batchResult.batch_id,
-        type: 'batch',
-        timestamp: batchResult.created_at,
-        targetLanguages,
-        batchResult,
-      };
-      const updated = [newItem, ...history].slice(0, MAX_HISTORY_ITEMS);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-    } catch (error) {
-      console.error('Failed to save batch to history:', error);
     }
   },
 

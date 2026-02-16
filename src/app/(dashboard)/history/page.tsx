@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Clock,
@@ -9,6 +9,7 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -25,29 +26,63 @@ import { Separator } from '@/components/ui/separator';
 import { historyStorage, type HistoryItem } from '@/lib/utils/historyStorage';
 import { SUPPORTED_LANGUAGES } from '@/types';
 import { getImageUrl } from '@/lib/utils';
+import { useListBatches } from '@/hooks';
 
 export default function HistoryPage() {
-  // Load from localStorage on mount (client-side only)
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    // Server: return empty array
-    if (typeof window === 'undefined') return [];
-    // Client: load from localStorage
-    return historyStorage.getHistory();
-  });
+  // Fetch batches from backend
+  const { data: batches, isLoading: isBatchesLoading } = useListBatches();
+
+  // Load single translations from localStorage
+  const [singleTranslations, setSingleTranslations] = useState<HistoryItem[]>(
+    () => {
+      if (typeof window === 'undefined') return [];
+      return historyStorage.getHistory().filter(h => h.type === 'single');
+    }
+  );
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
+  // Combine single translations with batches from backend
+  const history = useMemo(() => {
+    const batchItems: HistoryItem[] =
+      batches?.map(batch => ({
+        id: batch.batch_id,
+        type: 'batch' as const,
+        timestamp: batch.created_at,
+        targetLanguages: batch.target_languages,
+        batchResult: batch,
+      })) || [];
+
+    // Combine and sort by timestamp (newest first)
+    return [...singleTranslations, ...batchItems].sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+  }, [batches, singleTranslations]);
+
   const handleClearAll = () => {
-    if (confirm('Are you sure you want to clear all history?')) {
+    if (
+      confirm(
+        'Are you sure you want to clear all single translation history? (Batches are managed by the backend)'
+      )
+    ) {
       historyStorage.clearHistory();
-      setHistory([]);
-      toast.success('History cleared');
+      setSingleTranslations([]);
+      toast.success('Single translation history cleared');
     }
   };
 
   const handleDelete = (id: string) => {
-    historyStorage.deleteItem(id);
-    setHistory(historyStorage.getHistory());
-    toast.success('Item deleted');
+    // Only delete single translations (batches are managed by backend)
+    const item = history.find(h => h.id === id);
+    if (item?.type === 'single') {
+      historyStorage.deleteItem(id);
+      setSingleTranslations(
+        historyStorage.getHistory().filter(h => h.type === 'single')
+      );
+      toast.success('Item deleted');
+    } else {
+      toast.error('Batch items cannot be deleted from history');
+    }
   };
 
   const toggleExpand = (id: string) => {
@@ -111,15 +146,22 @@ export default function HistoryPage() {
             View your past translations and batch jobs
           </p>
         </div>
-        {history.length > 0 && (
+        {singleTranslations.length > 0 && (
           <Button variant="destructive" onClick={handleClearAll}>
             <Trash2 className="mr-2 h-4 w-4" />
-            Clear All
+            Clear Single Translations
           </Button>
         )}
       </div>
 
-      {history.length === 0 ? (
+      {isBatchesLoading ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="text-primary h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground mt-4">Loading history...</p>
+          </CardContent>
+        </Card>
+      ) : history.length === 0 ? (
         <Card>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-12 text-center">

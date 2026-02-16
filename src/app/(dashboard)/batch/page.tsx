@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Loader2, Layers, Plus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { AxiosError } from 'axios';
@@ -19,11 +19,9 @@ import {
   MultiImageUploader,
   MultiLanguageSelect,
   BatchProgress,
-  BatchResults,
 } from '@/components/features/batch';
 import { useCreateBatch, useListBatches, useCancelBatch } from '@/hooks';
 import { MAX_TARGET_LANGUAGES } from '@/lib/constants';
-import { historyStorage } from '@/lib/utils/historyStorage';
 
 const MAX_CONCURRENT_BATCHES = 999; // Unlimited for personal use
 
@@ -44,31 +42,15 @@ export default function BatchPage() {
 
   const isInitialLoading = isLoadingBatches && !batches;
 
+  // Filter to show only active batches (pending/processing/partially_completed)
   const activeBatches =
-    batches?.filter(b => b.status === 'pending' || b.status === 'processing') ||
-    [];
+    batches?.filter(
+      b =>
+        b.status === 'pending' ||
+        b.status === 'processing' ||
+        b.status === 'partially_completed'
+    ) || [];
   const canCreateBatch = activeBatches.length < MAX_CONCURRENT_BATCHES;
-
-  // Track saved batches to prevent duplicate saves
-  const savedBatchIds = useRef<Set<string>>(new Set());
-
-  // Save completed batches to history
-  useEffect(() => {
-    if (!batches) return;
-
-    batches.forEach(batch => {
-      const isFinished =
-        batch.status === 'completed' ||
-        batch.status === 'partially_completed' ||
-        batch.status === 'failed' ||
-        batch.status === 'cancelled';
-
-      if (isFinished && !savedBatchIds.current.has(batch.batch_id)) {
-        savedBatchIds.current.add(batch.batch_id);
-        historyStorage.addBatchTranslation(batch, batch.target_languages);
-      }
-    });
-  }, [batches]);
 
   const handleStartBatch = async () => {
     if (files.length === 0) {
@@ -272,11 +254,12 @@ export default function BatchPage() {
         </div>
       )}
 
-      {/* Batch List */}
+      {/* Active Batch List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            {showCreateForm ? 'Your Batches' : 'All Batches'}
+            Active Batches{' '}
+            {activeBatches.length > 0 && `(${activeBatches.length})`}
           </h2>
           {isFetching && !isInitialLoading && (
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -293,29 +276,19 @@ export default function BatchPage() {
               <p className="text-muted-foreground mt-4">Loading batches...</p>
             </CardContent>
           </Card>
-        ) : batches && batches.length > 0 ? (
+        ) : activeBatches.length > 0 ? (
           <div className="space-y-4">
-            {batches.map(batch => {
-              const isFinished =
-                batch.status === 'completed' ||
-                batch.status === 'partially_completed' ||
-                batch.status === 'failed' ||
-                batch.status === 'cancelled';
-
-              return (
-                <Card key={batch.batch_id}>
-                  <CardContent className="pt-6">
-                    <BatchProgress
-                      batchStatus={batch}
-                      onCancel={() => handleCancel(batch.batch_id)}
-                      isCancelling={cancelBatchMutation.isPending}
-                    />
-
-                    {isFinished && <BatchResults batchStatus={batch} />}
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {activeBatches.map(batch => (
+              <Card key={batch.batch_id}>
+                <CardContent className="pt-6">
+                  <BatchProgress
+                    batchStatus={batch}
+                    onCancel={() => handleCancel(batch.batch_id)}
+                    isCancelling={cancelBatchMutation.isPending}
+                  />
+                </CardContent>
+              </Card>
+            ))}
           </div>
         ) : (
           <Card>
@@ -324,9 +297,10 @@ export default function BatchPage() {
                 <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
                   <Layers className="text-muted-foreground h-6 w-6" />
                 </div>
-                <p className="mt-4 font-medium">No batches yet</p>
+                <p className="mt-4 font-medium">No active batches</p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Create your first batch to get started
+                  Create a batch to get started, or check the History page for
+                  past batches
                 </p>
               </div>
             </CardContent>

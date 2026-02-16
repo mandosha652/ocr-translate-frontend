@@ -27,9 +27,13 @@ import { SUPPORTED_LANGUAGES } from '@/types';
 import { getImageUrl } from '@/lib/utils';
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<HistoryItem[]>(() =>
-    historyStorage.getHistory()
-  );
+  // Load from localStorage on mount (client-side only)
+  const [history, setHistory] = useState<HistoryItem[]>(() => {
+    // Server: return empty array
+    if (typeof window === 'undefined') return [];
+    // Client: load from localStorage
+    return historyStorage.getHistory();
+  });
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
   const handleClearAll = () => {
@@ -99,7 +103,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8" suppressHydrationWarning>
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Translation History</h1>

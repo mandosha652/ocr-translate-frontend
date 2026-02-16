@@ -1,0 +1,206 @@
+'use client';
+
+import { useCallback, useState, useEffect } from 'react';
+import Image from 'next/image';
+import { useDropzone } from 'react-dropzone';
+import { Upload, X, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import {
+  MAX_FILE_SIZE_BYTES,
+  MAX_FILE_SIZE_MB,
+  MAX_BATCH_SIZE,
+} from '@/lib/constants';
+
+interface MultiImageUploaderProps {
+  onFilesChange: (files: File[]) => void;
+  selectedFiles: File[];
+  disabled?: boolean;
+}
+
+export function MultiImageUploader({
+  onFilesChange,
+  selectedFiles,
+  disabled,
+}: MultiImageUploaderProps) {
+  const [previews, setPreviews] = useState<Map<string, string>>(new Map());
+
+  const generatePreview = useCallback((file: File): Promise<string> => {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.readAsDataURL(file);
+    });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPreviews = async () => {
+      const newPreviews = new Map<string, string>();
+      for (const file of selectedFiles) {
+        const key = `${file.name}-${file.size}-${file.lastModified}`;
+        const preview = await generatePreview(file);
+        if (!cancelled) {
+          newPreviews.set(key, preview);
+        }
+      }
+      if (!cancelled) {
+        setPreviews(newPreviews);
+      }
+    };
+    loadPreviews();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFiles, generatePreview]);
+
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const remainingSlots = MAX_BATCH_SIZE - selectedFiles.length;
+      const filesToAdd = acceptedFiles.slice(0, remainingSlots);
+      onFilesChange([...selectedFiles, ...filesToAdd]);
+    },
+    [selectedFiles, onFilesChange]
+  );
+
+  const { getRootProps, getInputProps, isDragActive, fileRejections } =
+    useDropzone({
+      onDrop,
+      accept: {
+        'image/jpeg': ['.jpg', '.jpeg'],
+        'image/png': ['.png'],
+        'image/webp': ['.webp'],
+      },
+      maxSize: MAX_FILE_SIZE_BYTES,
+      multiple: true,
+      disabled: disabled || selectedFiles.length >= MAX_BATCH_SIZE,
+    });
+
+  const removeFile = (index: number) => {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    onFilesChange(newFiles);
+  };
+
+  const clearAll = () => {
+    onFilesChange([]);
+    setPreviews(new Map());
+  };
+
+  const getFileKey = (file: File) =>
+    `${file.name}-${file.size}-${file.lastModified}`;
+
+  const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+  const totalSizeMB = (totalSize / 1024 / 1024).toFixed(2);
+
+  return (
+    <div className="space-y-4">
+      <div
+        {...getRootProps()}
+        className={cn(
+          'cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors',
+          isDragActive
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25 hover:border-primary/50',
+          (disabled || selectedFiles.length >= MAX_BATCH_SIZE) &&
+            'cursor-not-allowed opacity-50'
+        )}
+      >
+        <input {...getInputProps()} />
+        <div className="flex flex-col items-center gap-3">
+          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
+            {isDragActive ? (
+              <ImageIcon className="text-primary h-5 w-5" />
+            ) : (
+              <Upload className="text-muted-foreground h-5 w-5" />
+            )}
+          </div>
+          <div>
+            <p className="font-medium">
+              {isDragActive
+                ? 'Drop images here'
+                : 'Drag & drop images, or click to browse'}
+            </p>
+            <p className="text-muted-foreground mt-1 text-sm">
+              Up to {MAX_BATCH_SIZE} images, max {MAX_FILE_SIZE_MB}MB each
+            </p>
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Supported: JPEG, PNG, WebP
+          </p>
+        </div>
+      </div>
+
+      {fileRejections.length > 0 && (
+        <div className="bg-destructive/10 text-destructive flex items-center gap-2 rounded-lg p-3 text-sm">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>
+            {fileRejections.length} file(s) rejected (too large or wrong format)
+          </span>
+        </div>
+      )}
+
+      {selectedFiles.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-muted-foreground text-sm">
+              {selectedFiles.length} of {MAX_BATCH_SIZE} images ({totalSizeMB}{' '}
+              MB total)
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAll}
+              disabled={disabled}
+            >
+              Clear all
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+            {selectedFiles.map((file, index) => {
+              const key = getFileKey(file);
+              const preview = previews.get(key);
+
+              return (
+                <div
+                  key={key}
+                  className="group bg-muted/50 relative overflow-hidden rounded-lg border"
+                >
+                  <div className="relative aspect-square">
+                    {preview ? (
+                      <Image
+                        src={preview}
+                        alt={file.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center">
+                        <ImageIcon className="text-muted-foreground h-8 w-8" />
+                      </div>
+                    )}
+                  </div>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+                    onClick={() => removeFile(index)}
+                    disabled={disabled}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                  <div className="absolute right-0 bottom-0 left-0 bg-black/60 px-2 py-1">
+                    <p className="truncate text-xs text-white">{file.name}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

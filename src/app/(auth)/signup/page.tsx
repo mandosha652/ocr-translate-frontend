@@ -1,0 +1,149 @@
+'use client';
+
+import Link from 'next/link';
+import { Suspense } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useAuth } from '@/hooks';
+import { registerSchema, type RegisterFormData } from '@/lib/validators';
+import { AxiosError } from 'axios';
+
+function SignupForm() {
+  const { registerAsync, isRegistering } = useAuth();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      const result = await registerAsync({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      });
+      toast.success('Account created successfully!', {
+        description: `Your API key: ${result.api_key.slice(0, 12)}... (Check your dashboard)`,
+        duration: 10000,
+      });
+    } catch (error) {
+      const axiosError = error as AxiosError<{ detail: string }>;
+      toast.error(
+        axiosError.response?.data?.detail || 'Failed to create account'
+      );
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-md">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <CardDescription>
+          Enter your details to create your account
+        </CardDescription>
+      </CardHeader>
+      <form onSubmit={handleSubmit(onSubmit)}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Name (optional)</Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Your name"
+              autoComplete="name"
+              {...register('name')}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              autoComplete="email"
+              {...register('email')}
+            />
+            {errors.email && (
+              <p className="text-destructive text-sm">{errors.email.message}</p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Create a password"
+              autoComplete="new-password"
+              {...register('password')}
+            />
+            {errors.password && (
+              <p className="text-destructive text-sm">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Confirm your password"
+              autoComplete="new-password"
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p className="text-destructive text-sm">
+                {errors.confirmPassword.message}
+              </p>
+            )}
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-4">
+          <Button type="submit" className="w-full" disabled={isRegistering}>
+            {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create account
+          </Button>
+          <p className="text-muted-foreground text-center text-sm">
+            Already have an account?{' '}
+            <Link href="/login" className="text-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md">
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <SignupForm />
+    </Suspense>
+  );
+}

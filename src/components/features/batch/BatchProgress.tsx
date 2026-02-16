@@ -12,7 +12,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BatchStatusResponse, BatchStatus, ImageStatus } from '@/types';
 
 interface BatchProgressProps {
@@ -75,98 +74,108 @@ export function BatchProgress({
     status === 'cancelled';
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Batch Progress</CardTitle>
-          <Badge variant={config.variant} className="gap-1.5">
-            <StatusIcon
-              className={cn(
-                'h-3 w-3',
-                status === 'processing' && 'animate-spin'
-              )}
-            />
-            {config.label}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <StatusIcon
+            className={cn(
+              'h-5 w-5',
+              status === 'processing' && 'text-primary animate-spin',
+              status === 'pending' && 'text-muted-foreground',
+              status === 'completed' && 'text-green-500',
+              status === 'partially_completed' && 'text-amber-500',
+              status === 'failed' && 'text-destructive',
+              status === 'cancelled' && 'text-muted-foreground'
+            )}
+          />
+          <div>
+            <h3 className="font-semibold">Batch Translation</h3>
+            <p className="text-muted-foreground text-sm">
               {isProcessing
                 ? `Processing ${completed_count + failed_count} of ${total_images} images...`
                 : `${completed_count} of ${total_images} completed`}
-            </span>
-            <span className="font-medium">{progressValue}%</span>
+            </p>
           </div>
-          <Progress value={progressValue} />
         </div>
+        <Badge variant={config.variant} className="gap-1.5">
+          {config.label}
+        </Badge>
+      </div>
 
-        {failed_count > 0 && (
-          <div className="text-destructive flex items-center gap-2 text-sm">
-            <XCircle className="h-4 w-4" />
-            <span>{failed_count} image(s) failed</span>
-          </div>
-        )}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground font-medium">
+            {completed_count} completed · {failed_count} failed ·{' '}
+            {total_images - completed_count - failed_count} remaining
+          </span>
+          <span className="font-semibold">{progressValue}%</span>
+        </div>
+        <Progress value={progressValue} className="h-2" />
+      </div>
 
-        <div className="max-h-48 space-y-2 overflow-y-auto">
-          {images.map(image => {
-            const imgConfig = imageStatusConfig[image.status];
-            const ImgIcon = imgConfig.icon;
+      {failed_count > 0 && (
+        <div className="text-destructive flex items-center gap-2 text-sm">
+          <XCircle className="h-4 w-4" />
+          <span>{failed_count} image(s) failed</span>
+        </div>
+      )}
 
-            return (
-              <div
-                key={image.image_id}
-                className="bg-muted/50 flex items-center justify-between rounded-lg px-3 py-2"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <ImgIcon
-                    className={cn(
-                      'h-4 w-4 shrink-0',
-                      imgConfig.color,
-                      image.status === 'processing' && 'animate-spin'
-                    )}
-                  />
-                  <span className="truncate text-sm">
-                    {image.original_filename}
-                  </span>
-                </div>
-                {image.error && (
-                  <span className="text-destructive ml-2 truncate text-xs">
-                    {image.error}
-                  </span>
-                )}
+      <div className="max-h-48 space-y-2 overflow-y-auto">
+        {images.map(image => {
+          const imgConfig = imageStatusConfig[image.status];
+          const ImgIcon = imgConfig.icon;
+
+          return (
+            <div
+              key={image.image_id}
+              className="bg-muted/50 flex items-center justify-between rounded-lg px-3 py-2"
+            >
+              <div className="flex items-center gap-3 overflow-hidden">
+                <ImgIcon
+                  className={cn(
+                    'h-4 w-4 shrink-0',
+                    imgConfig.color,
+                    image.status === 'processing' && 'animate-spin'
+                  )}
+                />
+                <span className="truncate text-sm">
+                  {image.original_filename}
+                </span>
               </div>
-            );
-          })}
-        </div>
+              {image.error && (
+                <span className="text-destructive ml-2 truncate text-xs">
+                  {image.error}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
-        {isProcessing && (
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={onCancel}
-            disabled={isCancelling}
-          >
-            {isCancelling ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Cancelling...
-              </>
-            ) : (
-              'Cancel Batch'
-            )}
-          </Button>
-        )}
+      {isProcessing && (
+        <Button
+          variant="destructive"
+          className="w-full"
+          onClick={onCancel}
+          disabled={isCancelling}
+        >
+          {isCancelling ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Cancelling...
+            </>
+          ) : (
+            'Cancel Batch'
+          )}
+        </Button>
+      )}
 
-        {isFinished && (
-          <p className="text-muted-foreground text-center text-sm">
-            Batch{' '}
-            {status === 'cancelled' ? 'was cancelled' : 'processing finished'}
-          </p>
-        )}
-      </CardContent>
-    </Card>
+      {isFinished && (
+        <p className="text-muted-foreground text-center text-sm">
+          Batch{' '}
+          {status === 'cancelled' ? 'was cancelled' : 'processing finished'}
+        </p>
+      )}
+    </div>
   );
 }

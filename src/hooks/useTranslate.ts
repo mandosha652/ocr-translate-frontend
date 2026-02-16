@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { translateApi } from '@/lib/api';
 
 interface TranslateImageOptions {
@@ -29,6 +29,7 @@ interface CreateBatchOptions {
 }
 
 export function useCreateBatch() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
       files,
@@ -39,6 +40,10 @@ export function useCreateBatch() {
       targetLanguages: string[];
       options?: CreateBatchOptions;
     }) => translateApi.createBatch(files, targetLanguages, options),
+    onSuccess: () => {
+      // Invalidate batches query to refetch the list
+      queryClient.invalidateQueries({ queryKey: ['batches'] });
+    },
   });
 }
 

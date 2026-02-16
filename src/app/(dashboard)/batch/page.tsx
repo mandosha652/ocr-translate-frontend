@@ -42,15 +42,12 @@ export default function BatchPage() {
 
   const isInitialLoading = isLoadingBatches && !batches;
 
-  // Filter to show only active batches (pending/processing/partially_completed)
-  const activeBatches =
-    batches?.filter(
-      b =>
-        b.status === 'pending' ||
-        b.status === 'processing' ||
-        b.status === 'partially_completed'
-    ) || [];
-  const canCreateBatch = activeBatches.length < MAX_CONCURRENT_BATCHES;
+  // Filter to show only actively executing batches
+  const processingBatches =
+    batches?.filter(b => b.status === 'pending' || b.status === 'processing') ||
+    [];
+
+  const canCreateBatch = processingBatches.length < MAX_CONCURRENT_BATCHES;
 
   const handleStartBatch = async () => {
     if (files.length === 0) {
@@ -143,8 +140,8 @@ export default function BatchPage() {
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            You have {activeBatches.length} active batch
-            {activeBatches.length !== 1 ? 'es' : ''} running. Maximum{' '}
+            You have {processingBatches.length} active batch
+            {processingBatches.length !== 1 ? 'es' : ''} running. Maximum{' '}
             {MAX_CONCURRENT_BATCHES} concurrent batches allowed. Please wait for
             one to complete before starting another.
           </AlertDescription>
@@ -254,17 +251,18 @@ export default function BatchPage() {
         </div>
       )}
 
-      {/* Active Batch List */}
+      {/* Executing Batches */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">
-            Active Batches{' '}
-            {activeBatches.length > 0 && `(${activeBatches.length})`}
+            {processingBatches.length > 0
+              ? `Processing (${processingBatches.length})`
+              : 'Active Batches'}
           </h2>
           {isFetching && !isInitialLoading && (
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Updating...</span>
+              <span>Refreshing...</span>
             </div>
           )}
         </div>
@@ -276,9 +274,9 @@ export default function BatchPage() {
               <p className="text-muted-foreground mt-4">Loading batches...</p>
             </CardContent>
           </Card>
-        ) : activeBatches.length > 0 ? (
+        ) : processingBatches.length > 0 ? (
           <div className="space-y-4">
-            {activeBatches.map(batch => (
+            {processingBatches.map(batch => (
               <Card key={batch.batch_id}>
                 <CardContent className="pt-6">
                   <BatchProgress
@@ -297,10 +295,9 @@ export default function BatchPage() {
                 <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
                   <Layers className="text-muted-foreground h-6 w-6" />
                 </div>
-                <p className="mt-4 font-medium">No active batches</p>
+                <p className="mt-4 font-medium">No batches processing</p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Create a batch to get started, or check the History page for
-                  past batches
+                  Start a new batch translation to see real-time progress here
                 </p>
               </div>
             </CardContent>

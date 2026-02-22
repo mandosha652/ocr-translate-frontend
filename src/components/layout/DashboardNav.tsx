@@ -15,6 +15,8 @@ import {
   Sun,
   Menu,
   X,
+  HelpCircle,
+  Newspaper,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
@@ -25,9 +27,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks';
 import { cn } from '@/lib/utils';
+import { NotificationBell } from '@/components/layout/NotificationBell';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,6 +55,7 @@ export function DashboardNav() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
   const initials = user?.name
     ? user.name
@@ -55,7 +69,10 @@ export function DashboardNav() {
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-4 md:gap-8">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="focus-visible:ring-ring/50 flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:outline-none"
+          >
             <Languages className="h-6 w-6" />
             <span className="text-lg font-semibold sm:text-xl">
               OCR Translate
@@ -63,10 +80,18 @@ export function DashboardNav() {
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {navItems.map(item => (
-              <Link key={item.href} href={item.href}>
+              <Link
+                key={item.href}
+                href={item.href}
+                className="focus-visible:ring-ring/50 rounded-md focus-visible:ring-2 focus-visible:outline-none"
+              >
                 <Button
                   variant="ghost"
-                  className={cn('gap-2', pathname === item.href && 'bg-accent')}
+                  className={cn(
+                    'gap-2',
+                    pathname === item.href && 'bg-accent font-medium'
+                  )}
+                  tabIndex={-1}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
@@ -77,6 +102,8 @@ export function DashboardNav() {
         </div>
 
         <div className="flex items-center gap-2">
+          <NotificationBell />
+
           <Button
             variant="ghost"
             size="icon"
@@ -115,8 +142,23 @@ export function DashboardNav() {
                   Settings
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/help">
+                  <HelpCircle className="mr-2 h-4 w-4" />
+                  Help &amp; FAQ
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/changelog">
+                  <Newspaper className="mr-2 h-4 w-4" />
+                  What&apos;s New
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout} className="text-destructive">
+              <DropdownMenuItem
+                onClick={() => setLogoutDialogOpen(true)}
+                className="text-destructive"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>
@@ -141,7 +183,7 @@ export function DashboardNav() {
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="border-t md:hidden">
+        <div className="animate-in slide-in-from-top-2 border-t duration-200 md:hidden">
           <nav className="container mx-auto max-w-6xl px-4 py-4">
             <div className="flex flex-col space-y-1">
               {navItems.map(item => (
@@ -192,8 +234,8 @@ export function DashboardNav() {
                   variant="ghost"
                   className="text-destructive w-full justify-start gap-3"
                   onClick={() => {
-                    logout();
                     setMobileMenuOpen(false);
+                    setLogoutDialogOpen(true);
                   }}
                 >
                   <LogOut className="h-5 w-5" />
@@ -204,6 +246,23 @@ export function DashboardNav() {
           </nav>
         </div>
       )}
+
+      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be signed out of your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={logout}>
+              Log out
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 }

@@ -2,7 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { authApi } from '@/lib/api';
-import type { ApiKeyCreateRequest } from '@/types';
+import { useAuthStore } from '@/store/authStore';
+import type {
+  ApiKeyCreateRequest,
+  ApiKeyRenameRequest,
+  UpdateProfileRequest,
+} from '@/types';
 
 export function useApiKeys() {
   return useQuery({
@@ -30,6 +35,45 @@ export function useRevokeApiKey() {
     mutationFn: (keyId: string) => authApi.revokeApiKey(keyId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+    },
+  });
+}
+
+export function useRenameApiKey() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      keyId,
+      data,
+    }: {
+      keyId: string;
+      data: ApiKeyRenameRequest;
+    }) => authApi.renameApiKey(keyId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['apiKeys'] });
+    },
+  });
+}
+
+export function useApiKeyStats(keyId: string | null) {
+  return useQuery({
+    queryKey: ['apiKeyStats', keyId],
+    queryFn: () => authApi.getApiKeyStats(keyId!),
+    enabled: !!keyId,
+    staleTime: 60 * 1000, // 1 minute
+  });
+}
+
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+  const { setUser } = useAuthStore();
+
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => authApi.updateProfile(data),
+    onSuccess: updatedUser => {
+      setUser(updatedUser);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 }

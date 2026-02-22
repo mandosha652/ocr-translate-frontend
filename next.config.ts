@@ -2,6 +2,9 @@ import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {
@@ -24,15 +27,17 @@ export default withSentryConfig(nextConfig, {
 
   widenClientFileUpload: true,
 
-  reactComponentAnnotation: {
-    enabled: true,
-  },
-
   sourcemaps: {
     disable: true,
   },
 
-  disableLogger: true,
-
-  automaticVercelMonitors: true,
+  webpack: {
+    reactComponentAnnotation: {
+      enabled: true,
+    },
+    treeshake: {
+      removeDebugLogging: true,
+    },
+    automaticVercelMonitors: true,
+  },
 });

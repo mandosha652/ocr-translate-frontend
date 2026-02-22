@@ -5,6 +5,7 @@ import type {
   BatchCreateResponse,
   BatchStatusResponse,
   BatchCancelResponse,
+  TranslationHistoryResponse,
 } from '@/types';
 
 export const translateApi = {
@@ -17,6 +18,7 @@ export const translateApi = {
     options?: {
       sourceLang?: string;
       excludeText?: string;
+      signal?: AbortSignal;
     }
   ): Promise<TranslateResponse> => {
     const formData = new FormData();
@@ -37,7 +39,8 @@ export const translateApi = {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-        timeout: 120000, // 2 minutes for translation
+        timeout: 120000,
+        signal: options?.signal,
       }
     );
 
@@ -117,6 +120,39 @@ export const translateApi = {
   }): Promise<BatchStatusResponse[]> => {
     const response = await apiClient.get<BatchStatusResponse[]>(
       ENDPOINTS.BATCH_LIST,
+      {
+        params: {
+          limit: options?.limit ?? 50,
+          offset: options?.offset ?? 0,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  /**
+   * Retry a single failed image within a batch
+   */
+  retryBatchImage: async (
+    batchId: string,
+    imageId: string
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post<{
+      success: boolean;
+      message: string;
+    }>(ENDPOINTS.BATCH_RETRY_IMAGE(batchId, imageId));
+    return response.data;
+  },
+
+  /**
+   * Get paginated single-image translation history (server-side)
+   */
+  getTranslationHistory: async (options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<TranslationHistoryResponse> => {
+    const response = await apiClient.get<TranslationHistoryResponse>(
+      ENDPOINTS.TRANSLATE_HISTORY,
       {
         params: {
           limit: options?.limit ?? 50,

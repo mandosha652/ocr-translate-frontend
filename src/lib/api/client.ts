@@ -14,7 +14,8 @@ const REFRESH_TOKEN_KEY = 'refresh_token';
 const setCookie = (name: string, value: string, days: number = 7): void => {
   if (typeof document === 'undefined') return;
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax; Secure`;
+  const secure = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax${secure}`;
 };
 
 const getCookie = (name: string): string | null => {
@@ -40,7 +41,6 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
 });
 
 // Token management utilities (using cookies for SSR compatibility)
@@ -141,6 +141,9 @@ apiClient.interceptors.response.use(
         );
 
         const newTokens = response.data;
+        if (!newTokens?.access_token || !newTokens?.refresh_token) {
+          throw new Error('Invalid token refresh response');
+        }
         tokenStorage.setTokens(newTokens);
 
         processQueue(null, newTokens.access_token);

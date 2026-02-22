@@ -109,19 +109,25 @@ export function MultiImageUploader({
       <div
         {...getRootProps()}
         className={cn(
-          'cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors',
+          'rounded-lg border-2 border-dashed p-6 text-center transition-all duration-200',
           isDragActive
-            ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/25 hover:border-primary/50',
-          (disabled || selectedFiles.length >= MAX_BATCH_SIZE) &&
-            'cursor-not-allowed opacity-50'
+            ? 'border-primary bg-primary/5 scale-[1.01]'
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30',
+          disabled || selectedFiles.length >= MAX_BATCH_SIZE
+            ? 'cursor-not-allowed opacity-50'
+            : 'cursor-pointer'
         )}
       >
         <input {...getInputProps()} />
         <div className="flex flex-col items-center gap-3">
-          <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
+          <div
+            className={cn(
+              'flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200',
+              isDragActive ? 'bg-primary/10' : 'bg-muted'
+            )}
+          >
             {isDragActive ? (
-              <ImageIcon className="text-primary h-5 w-5" />
+              <ImageIcon className="text-primary animate-in zoom-in-75 h-5 w-5 duration-150" />
             ) : (
               <Upload className="text-muted-foreground h-5 w-5" />
             )}

@@ -1,8 +1,8 @@
 'use client';
-import { useState } from 'react';
-import { Loader2, Layers, Plus, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, Layers, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
-import { AxiosError } from 'axios';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LanguageSelect } from '@/components/features/translate/LanguageSelect';
 import {
   MultiImageUploader,
@@ -21,12 +20,10 @@ import {
   BatchProgress,
 } from '@/components/features/batch';
 import { useCreateBatch, useListBatches, useCancelBatch } from '@/hooks';
-import { MAX_TARGET_LANGUAGES } from '@/lib/constants';
-
-const MAX_CONCURRENT_BATCHES = 999; // Unlimited for personal use
+import { MAX_TARGET_LANGUAGES, MAX_CONCURRENT_BATCHES } from '@/lib/constants';
+import { getErrorMessage } from '@/lib/utils';
 
 export default function BatchPage() {
-  const [showCreateForm, setShowCreateForm] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [targetLanguages, setTargetLanguages] = useState<string[]>([]);
   const [sourceLang, setSourceLang] = useState('auto');
@@ -34,37 +31,82 @@ export default function BatchPage() {
 
   const createBatchMutation = useCreateBatch();
   const cancelBatchMutation = useCancelBatch();
-  const {
-    data: batches,
-    isLoading: isLoadingBatches,
-    isFetching,
-  } = useListBatches();
+  const { data: batches, isLoading: isLoadingBatches } = useListBatches({
+    enabled: true,
+  });
 
-  const isInitialLoading = isLoadingBatches && !batches;
+  const prevStatusesRef = useRef<Map<string, string>>(new Map());
+  useEffect(() => {
+    if (!batches) return;
+    const prev = prevStatusesRef.current;
+    batches.forEach(batch => {
+      const prevStatus = prev.get(batch.batch_id);
+      const isNowFinished =
+        batch.status === 'completed' ||
+        batch.status === 'partially_completed' ||
+        batch.status === 'failed' ||
+        batch.status === 'cancelled';
+      const wasActive = prevStatus === 'pending' || prevStatus === 'processing';
+      if (wasActive && isNowFinished) {
+        const label =
+          batch.status === 'completed'
+            ? 'Batch completed'
+            : batch.status === 'partially_completed'
+              ? 'Batch partially completed'
+              : batch.status === 'failed'
+                ? 'Batch failed'
+                : 'Batch cancelled';
+        const detail = `${batch.completed_count} of ${batch.total_images} images processed`;
+        if (
+          typeof window !== 'undefined' &&
+          'Notification' in window &&
+          Notification.permission === 'granted'
+        ) {
+          new Notification(label, { body: detail, icon: '/favicon.ico' });
+        } else {
+          toast.info(`${label} — ${detail}`);
+        }
+      }
+      prev.set(batch.batch_id, batch.status);
+    });
+  }, [batches]);
 
-  // Filter to show only actively executing batches
-  const processingBatches =
-    batches?.filter(b => b.status === 'pending' || b.status === 'processing') ||
+  const requestNotificationPermission = () => {
+    if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'default'
+    ) {
+      Notification.requestPermission();
+    }
+  };
+
+  const activeBatches =
+    batches?.filter(b => b.status === 'pending' || b.status === 'processing') ??
     [];
 
-  const canCreateBatch = processingBatches.length < MAX_CONCURRENT_BATCHES;
+  const atConcurrentLimit = activeBatches.length >= MAX_CONCURRENT_BATCHES;
+
+  const resetForm = () => {
+    setFiles([]);
+    setTargetLanguages([]);
+    setSourceLang('auto');
+    setExcludeText('');
+  };
 
   const handleStartBatch = async () => {
     if (files.length === 0) {
       toast.error('Please select at least one image');
       return;
     }
-
     if (targetLanguages.length === 0) {
       toast.error('Please select at least one target language');
       return;
     }
-
     if (targetLanguages.length > MAX_TARGET_LANGUAGES) {
       toast.error(`Maximum ${MAX_TARGET_LANGUAGES} target languages allowed`);
       return;
     }
-
     try {
       const response = await createBatchMutation.mutateAsync({
         files,
@@ -75,25 +117,10 @@ export default function BatchPage() {
         },
       });
       toast.success(`Batch started with ${response.total_images} images`);
-
-      // Reset form
-      setFiles([]);
-      setTargetLanguages([]);
-      setSourceLang('auto');
-      setExcludeText('');
-      setShowCreateForm(false);
+      requestNotificationPermission();
+      resetForm();
     } catch (error) {
-      const axiosError = error as AxiosError<{
-        message: string;
-        error: string;
-        detail: string;
-      }>;
-      toast.error(
-        axiosError.response?.data?.detail ||
-          axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          'Failed to start batch'
-      );
+      toast.error(getErrorMessage(error, 'Failed to start batch'));
     }
   };
 
@@ -102,183 +129,148 @@ export default function BatchPage() {
       await cancelBatchMutation.mutateAsync(batchId);
       toast.success('Batch cancelled');
     } catch (error) {
-      const axiosError = error as AxiosError<{
-        message: string;
-        error: string;
-      }>;
-      toast.error(
-        axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          'Failed to cancel batch'
-      );
+      toast.error(getErrorMessage(error, 'Failed to cancel batch'));
     }
   };
 
-  return (
-    <div className="space-y-6 sm:space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">Batch Translation</h1>
-          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-            Translate multiple images to multiple languages at once
-          </p>
-        </div>
+  const excludeEntries = excludeText
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
 
-        {!showCreateForm && (
-          <Button
-            onClick={() => setShowCreateForm(true)}
-            disabled={!canCreateBatch || isInitialLoading}
-            size="lg"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            New Batch
-          </Button>
-        )}
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold sm:text-3xl">Batch Translation</h1>
+        <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+          Translate multiple images to multiple languages at once
+        </p>
       </div>
 
-      {!canCreateBatch && !showCreateForm && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            You have {processingBatches.length} active batch
-            {processingBatches.length !== 1 ? 'es' : ''} running. Maximum{' '}
-            {MAX_CONCURRENT_BATCHES} concurrent batches allowed. Please wait for
-            one to complete before starting another.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {showCreateForm && (
+      {/* Top section: form + active batches side by side */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Submit form — always visible */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Create New Batch</h2>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowCreateForm(false);
-                setFiles([]);
-                setTargetLanguages([]);
-                setSourceLang('auto');
-                setExcludeText('');
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-
-          <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
-            {/* Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Images</CardTitle>
-                <CardDescription>
-                  Select up to 100 images to translate in batch
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MultiImageUploader
-                  onFilesChange={setFiles}
-                  selectedFiles={files}
-                  disabled={createBatchMutation.isPending}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Settings Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Translation Settings</CardTitle>
-                <CardDescription>
-                  Configure languages and options for this batch
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <LanguageSelect
-                  value={sourceLang}
-                  onChange={setSourceLang}
-                  label="Source Language"
-                  placeholder="Auto-detect"
-                  showAuto
-                  disabled={createBatchMutation.isPending}
-                />
-
-                <MultiLanguageSelect
-                  selectedLanguages={targetLanguages}
-                  onChange={setTargetLanguages}
-                  label="Target Languages"
-                  disabled={createBatchMutation.isPending}
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="excludeText">Exclude Text (optional)</Label>
-                  <Input
-                    id="excludeText"
-                    placeholder="e.g., BRAND,@handle,Logo"
-                    value={excludeText}
-                    onChange={e => setExcludeText(e.target.value)}
-                    disabled={createBatchMutation.isPending}
-                  />
-                  <p className="text-muted-foreground text-xs">
-                    Comma-separated text patterns to exclude from translation
-                  </p>
-                </div>
-
-                <Button
-                  onClick={handleStartBatch}
-                  disabled={
-                    files.length === 0 ||
-                    targetLanguages.length === 0 ||
-                    createBatchMutation.isPending
-                  }
-                  className="w-full"
-                  size="lg"
-                >
-                  {createBatchMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Starting Batch...
-                    </>
-                  ) : (
-                    <>
-                      <Layers className="mr-2 h-4 w-4" />
-                      Start Batch Translation
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/* Executing Batches */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">
-            {processingBatches.length > 0
-              ? `Processing (${processingBatches.length})`
-              : 'Active Batches'}
-          </h2>
-          {isFetching && !isInitialLoading && (
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span>Refreshing...</span>
-            </div>
-          )}
-        </div>
-
-        {isInitialLoading ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Loader2 className="text-primary h-8 w-8 animate-spin" />
-              <p className="text-muted-foreground mt-4">Loading batches...</p>
+            <CardHeader>
+              <CardTitle>New Batch</CardTitle>
+              <CardDescription>
+                Upload images and configure translation settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <MultiImageUploader
+                onFilesChange={setFiles}
+                selectedFiles={files}
+                disabled={createBatchMutation.isPending}
+              />
+
+              <LanguageSelect
+                value={sourceLang}
+                onChange={setSourceLang}
+                label="Source Language"
+                placeholder="Auto-detect"
+                showAuto
+                disabled={createBatchMutation.isPending}
+              />
+
+              <MultiLanguageSelect
+                selectedLanguages={targetLanguages}
+                onChange={setTargetLanguages}
+                label="Target Languages"
+                disabled={createBatchMutation.isPending}
+              />
+
+              <div className="space-y-2">
+                <Label htmlFor="excludeText">
+                  Exclude Text{' '}
+                  <span className="text-muted-foreground font-normal">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="excludeText"
+                  placeholder="e.g., BRAND,@handle,Logo"
+                  value={excludeText}
+                  onChange={e => setExcludeText(e.target.value)}
+                  disabled={createBatchMutation.isPending}
+                />
+                {excludeText.trim() &&
+                  (excludeText.includes(',,') ? (
+                    <p className="text-xs text-amber-600">
+                      Remove consecutive commas — empty entries are ignored
+                    </p>
+                  ) : excludeEntries.some(e => e.length > 50) ? (
+                    <p className="text-xs text-amber-600">
+                      Some entries are very long — only exact matches work
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      {excludeEntries.length} entr
+                      {excludeEntries.length === 1 ? 'y' : 'ies'} will be
+                      excluded
+                    </p>
+                  ))}
+              </div>
+
+              {atConcurrentLimit && (
+                <div className="text-muted-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>
+                    {activeBatches.length} batch
+                    {activeBatches.length !== 1 ? 'es' : ''} already running —
+                    wait for one to finish
+                  </span>
+                </div>
+              )}
+
+              <Button
+                onClick={handleStartBatch}
+                disabled={
+                  files.length === 0 ||
+                  targetLanguages.length === 0 ||
+                  createBatchMutation.isPending ||
+                  atConcurrentLimit
+                }
+                className="w-full"
+                size="lg"
+              >
+                {createBatchMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Starting…
+                  </>
+                ) : (
+                  <>
+                    <Layers className="mr-2 h-4 w-4" />
+                    Start Batch
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
-        ) : processingBatches.length > 0 ? (
-          <div className="space-y-4">
-            {processingBatches.map(batch => (
+        </div>
+
+        {/* Active batches — shown in the right column */}
+        <div className="space-y-4">
+          {isLoadingBatches && !batches ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              </CardContent>
+            </Card>
+          ) : activeBatches.length > 0 ? (
+            activeBatches.map(batch => (
               <Card key={batch.batch_id}>
-                <CardContent className="pt-6">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Running</CardTitle>
+                    <p className="text-muted-foreground text-xs">
+                      {format(new Date(batch.created_at), 'HH:mm')}
+                    </p>
+                  </div>
+                </CardHeader>
+                <CardContent>
                   <BatchProgress
                     batchStatus={batch}
                     onCancel={() => handleCancel(batch.batch_id)}
@@ -286,23 +278,13 @@ export default function BatchPage() {
                   />
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent>
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-full">
-                  <Layers className="text-muted-foreground h-6 w-6" />
-                </div>
-                <p className="mt-4 font-medium">No batches processing</p>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Start a new batch translation to see real-time progress here
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+            ))
+          ) : (
+            <div className="flex h-full min-h-50 items-center justify-center rounded-xl border-2 border-dashed">
+              <p className="text-muted-foreground text-sm">No active batches</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

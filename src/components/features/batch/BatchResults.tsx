@@ -1,21 +1,29 @@
 'use client';
 
 import { useState } from 'react';
+import JSZip from 'jszip';
+import { format } from 'date-fns';
 import {
   Download,
   ExternalLink,
   CheckCircle2,
   XCircle,
   ChevronDown,
-  ChevronUp,
+  Loader2,
+  RefreshCw,
+  AlertCircle,
+  Ban,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { BatchStatusResponse, ImageResult } from '@/types';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import type { BatchStatusResponse, BatchStatus, ImageResult } from '@/types';
 import { SUPPORTED_LANGUAGES } from '@/types';
-import { getImageUrl } from '@/lib/utils';
+import { cn, getImageUrl } from '@/lib/utils';
+import { useRetryBatchImage } from '@/hooks';
 
 interface BatchResultsProps {
   batchStatus: BatchStatusResponse;
@@ -25,7 +33,39 @@ function getLanguageName(code: string): string {
   return SUPPORTED_LANGUAGES.find(l => l.code === code)?.name || code;
 }
 
-function ImageResultCard({ image }: { image: ImageResult }) {
+const statusConfig: Record<
+  BatchStatus,
+  {
+    label: string;
+    color: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }
+> = {
+  pending: { label: 'Pending', color: 'text-muted-foreground', icon: Loader2 },
+  processing: { label: 'Processing', color: 'text-primary', icon: Loader2 },
+  completed: {
+    label: 'Completed',
+    color: 'text-green-500',
+    icon: CheckCircle2,
+  },
+  partially_completed: {
+    label: 'Partial',
+    color: 'text-amber-500',
+    icon: AlertCircle,
+  },
+  failed: { label: 'Failed', color: 'text-destructive', icon: XCircle },
+  cancelled: { label: 'Cancelled', color: 'text-muted-foreground', icon: Ban },
+};
+
+function ImageResultCard({
+  image,
+  onRetry,
+  isRetrying,
+}: {
+  image: ImageResult;
+  onRetry?: () => void;
+  isRetrying?: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
 
   const successfulTranslations = image.translations.filter(
@@ -35,26 +75,30 @@ function ImageResultCard({ image }: { image: ImageResult }) {
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
-        <div className="flex items-start gap-3 p-4">
+        <div className="flex min-w-0 items-start gap-3 p-4">
           {image.original_image_url ? (
-            <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border">
               <Image
                 src={getImageUrl(image.original_image_url)}
                 alt={image.original_filename}
                 fill
                 className="object-cover"
                 unoptimized
+                loading="lazy"
+                sizes="56px"
               />
             </div>
           ) : (
-            <div className="bg-muted flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border">
-              <span className="text-muted-foreground text-xs">No image</span>
+            <div className="bg-muted flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border">
+              <span className="text-muted-foreground text-xs">No img</span>
             </div>
           )}
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-2">
-              <p className="truncate font-medium">{image.original_filename}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-sm font-medium">
+                {image.original_filename}
+              </p>
               {image.status === 'completed' ? (
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
               ) : image.status === 'failed' ? (
@@ -63,47 +107,69 @@ function ImageResultCard({ image }: { image: ImageResult }) {
             </div>
 
             {image.error ? (
-              <p className="text-destructive mt-1 text-sm">{image.error}</p>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-destructive text-xs">
+                  {image.error.includes('429') ||
+                  image.error.toLowerCase().includes('throttl')
+                    ? 'Rate limited — too many requests'
+                    : image.error.includes('ReplicateError')
+                      ? 'Processing failed'
+                      : image.error.length > 80
+                        ? image.error.slice(0, 80) + '…'
+                        : image.error}
+                </p>
+                {onRetry && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-xs"
+                    onClick={onRetry}
+                    disabled={isRetrying}
+                  >
+                    {isRetrying ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="h-3 w-3" />
+                    )}
+                    Retry
+                  </Button>
+                )}
+              </div>
             ) : (
-              <p className="text-muted-foreground mt-1 text-sm">
-                {successfulTranslations.length} translation(s) ready
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {successfulTranslations.length} translation
+                {successfulTranslations.length !== 1 ? 's' : ''} ready
               </p>
             )}
 
             {successfulTranslations.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-2 h-auto gap-1 p-0 text-sm"
+              <button
+                className="focus-visible:ring-ring/50 mt-2 flex cursor-pointer items-center gap-1 text-xs text-blue-500 hover:text-blue-600 focus-visible:ring-2 focus-visible:outline-none"
                 onClick={() => setExpanded(!expanded)}
               >
-                {expanded ? (
-                  <>
-                    Hide translations <ChevronUp className="h-3 w-3" />
-                  </>
-                ) : (
-                  <>
-                    View translations <ChevronDown className="h-3 w-3" />
-                  </>
-                )}
-              </Button>
+                {expanded ? 'Hide' : 'View translations'}
+                <ChevronDown
+                  className={cn(
+                    'h-3 w-3 transition-transform duration-200',
+                    expanded && 'rotate-180'
+                  )}
+                />
+              </button>
             )}
           </div>
         </div>
 
         {expanded && successfulTranslations.length > 0 && (
-          <div className="bg-muted/30 border-t p-4">
-            <div className="space-y-3">
+          <div className="bg-muted/30 border-t px-4 py-3">
+            <div className="space-y-2">
               {successfulTranslations.map(translation => (
                 <div
                   key={translation.target_lang}
                   className="flex items-center justify-between gap-3"
                 >
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {getLanguageName(translation.target_lang)}
-                    </Badge>
-                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {getLanguageName(translation.target_lang)}
+                  </Badge>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon-sm" asChild>
                       <a
@@ -134,71 +200,207 @@ function ImageResultCard({ image }: { image: ImageResult }) {
 }
 
 export function BatchResults({ batchStatus }: BatchResultsProps) {
-  const { images, completed_count, failed_count, target_languages } =
-    batchStatus;
+  const {
+    images,
+    completed_count,
+    failed_count,
+    target_languages,
+    created_at,
+    status,
+  } = batchStatus;
+
+  const [expanded, setExpanded] = useState(false);
+  const [isZipping, setIsZipping] = useState(false);
+  const retryImage = useRetryBatchImage();
+
+  const config = statusConfig[status];
+  const StatusIcon = config.icon;
+
+  const formattedDate = format(new Date(created_at), 'MMM d, HH:mm');
 
   const completedImages = images.filter(img => img.status === 'completed');
   const failedImages = images.filter(img => img.status === 'failed');
 
+  const handleRetry = async (imageId: string) => {
+    try {
+      await retryImage.mutateAsync({ batchId: batchStatus.batch_id, imageId });
+      toast.success('Retry queued');
+    } catch {
+      toast.error('Failed to retry image');
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    const allTranslations = completedImages.flatMap(img =>
+      img.translations
+        .filter(t => t.status === 'completed' && t.translated_image_url)
+        .map(t => ({
+          url: getImageUrl(t.translated_image_url!),
+          filename: `${img.original_filename.replace(/\.[^.]+$/, '')}_${t.target_lang}.png`,
+        }))
+    );
+
+    if (allTranslations.length === 0) {
+      toast.error('No completed translations to download');
+      return;
+    }
+
+    setIsZipping(true);
+    try {
+      const zip = new JSZip();
+      await Promise.all(
+        allTranslations.map(async ({ url, filename }) => {
+          const res = await fetch(url);
+          const blob = await res.blob();
+          zip.file(filename, blob);
+        })
+      );
+      const content = await zip.generateAsync({ type: 'blob' });
+      const blobUrl = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `batch-${batchStatus.batch_id.slice(0, 8)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+      toast.success(`Downloaded ${allTranslations.length} images as ZIP`);
+    } catch {
+      toast.error('Failed to create ZIP — try downloading individually');
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Results Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <p className="text-2xl font-bold text-green-500">
-                {completed_count}
-              </p>
-              <p className="text-muted-foreground text-sm">Completed</p>
+    <Card>
+      {/* Summary header — always visible, click to expand/collapse */}
+      <CardHeader className="pb-0">
+        <button
+          className="focus-visible:ring-ring/50 flex w-full cursor-pointer items-center gap-4 text-left focus-visible:ring-2 focus-visible:outline-none"
+          onClick={() => setExpanded(!expanded)}
+        >
+          <StatusIcon
+            className={cn(
+              'h-4 w-4 shrink-0',
+              config.color,
+              status === 'processing' && 'animate-spin'
+            )}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{config.label}</span>
+              <span className="text-muted-foreground text-sm">
+                {completed_count}/{batchStatus.total_images} images
+              </span>
+              {failed_count > 0 && (
+                <span className="text-destructive text-sm">
+                  · {failed_count} failed
+                </span>
+              )}
             </div>
-            <div>
-              <p className="text-destructive text-2xl font-bold">
-                {failed_count}
-              </p>
-              <p className="text-muted-foreground text-sm">Failed</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{target_languages.length}</p>
-              <p className="text-muted-foreground text-sm">Languages</p>
+            <div className="mt-0.5 flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">
+                {formattedDate}
+              </span>
+              <span className="text-muted-foreground text-xs">·</span>
+              <span className="text-muted-foreground text-xs">
+                {target_languages.map(getLanguageName).join(', ')}
+              </span>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {completed_count > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={e => {
+                  e.stopPropagation();
+                  handleDownloadAll();
+                }}
+                disabled={isZipping}
+                className="h-7 text-xs"
+              >
+                {isZipping ? (
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                ) : (
+                  <Download className="mr-1.5 h-3 w-3" />
+                )}
+                {isZipping ? 'Zipping…' : 'ZIP'}
+              </Button>
+            )}
+            <ChevronDown
+              className={cn(
+                'text-muted-foreground h-4 w-4 transition-transform duration-200',
+                expanded && 'rotate-180'
+              )}
+            />
+          </div>
+        </button>
+      </CardHeader>
 
-          <div className="mt-4 flex flex-wrap gap-2">
-            {target_languages.map(lang => (
-              <Badge key={lang} variant="secondary">
-                {getLanguageName(lang)}
-              </Badge>
-            ))}
+      {/* Expanded detail */}
+      {expanded && (
+        <CardContent className="pt-4">
+          {completedImages.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                Completed ({completedImages.length})
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {completedImages.map(image => (
+                  <ImageResultCard key={image.image_id} image={image} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {failedImages.length > 0 && (
+            <div
+              className={cn('space-y-3', completedImages.length > 0 && 'mt-5')}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                  Failed ({failedImages.length})
+                </p>
+                {failedImages.length > 1 && (
+                  <button
+                    onClick={() =>
+                      failedImages.forEach(img => handleRetry(img.image_id))
+                    }
+                    disabled={retryImage.isPending}
+                    className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex cursor-pointer items-center gap-1.5 rounded text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    Retry all
+                  </button>
+                )}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {failedImages.map(image => (
+                  <ImageResultCard
+                    key={image.image_id}
+                    image={image}
+                    onRetry={() => handleRetry(image.image_id)}
+                    isRetrying={
+                      retryImage.isPending &&
+                      retryImage.variables?.imageId === image.image_id
+                    }
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 flex justify-end border-t pt-3">
+            <Link href="/history">
+              <Button variant="ghost" size="sm" className="text-xs">
+                View in History →
+              </Button>
+            </Link>
           </div>
         </CardContent>
-      </Card>
-
-      {completedImages.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-medium">Completed ({completedImages.length})</h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {completedImages.map(image => (
-              <ImageResultCard key={image.image_id} image={image} />
-            ))}
-          </div>
-        </div>
       )}
-
-      {failedImages.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-destructive font-medium">
-            Failed ({failedImages.length})
-          </h3>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {failedImages.map(image => (
-              <ImageResultCard key={image.image_id} image={image} />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </Card>
   );
 }

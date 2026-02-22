@@ -5,5 +5,26 @@ export {
   useBatchStatus,
   useCancelBatch,
   useListBatches,
+  useRetryBatchImage,
+  useTranslationHistory,
 } from './useTranslate';
-export { useApiKeys, useCreateApiKey, useRevokeApiKey } from './useApiKeys';
+export {
+  useApiKeys,
+  useCreateApiKey,
+  useRevokeApiKey,
+  useRenameApiKey,
+  useApiKeyStats,
+  useUpdateProfile,
+} from './useApiKeys';
+export { useUsageStats } from './useUsageStats';
+export {
+  useAdminStats,
+  useAdminUsers,
+  useAdminUser,
+  useAdminUpdateUser,
+  useAdminDeleteUser,
+  useAdminImpersonateUser,
+  useAdminBatches,
+  useAdminBatch,
+  useAdminDeleteBatch,
+} from './useAdmin';

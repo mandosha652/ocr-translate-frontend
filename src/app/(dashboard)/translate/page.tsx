@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Loader2, RotateCcw, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,8 +17,8 @@ import { LanguageSelect } from '@/components/features/translate/LanguageSelect';
 import { TranslationResult } from '@/components/features/translate/TranslationResult';
 import { useTranslateImage } from '@/hooks';
 import type { TranslateResponse } from '@/types';
-import { AxiosError } from 'axios';
 import { historyStorage } from '@/lib/utils/historyStorage';
+import { getErrorMessage } from '@/lib/utils';
 
 export default function TranslatePage() {
   const [file, setFile] = useState<File | null>(null);
@@ -26,6 +26,7 @@ export default function TranslatePage() {
   const [sourceLang, setSourceLang] = useState('auto');
   const [excludeText, setExcludeText] = useState('');
   const [result, setResult] = useState<TranslateResponse | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const translateMutation = useTranslateImage();
 
@@ -35,10 +36,13 @@ export default function TranslatePage() {
       return;
     }
 
+    abortControllerRef.current = new AbortController();
+
     try {
       const response = await translateMutation.mutateAsync({
         file,
         targetLang,
+        signal: abortControllerRef.current.signal,
         options: {
           sourceLang: sourceLang !== 'auto' ? sourceLang : undefined,
           excludeText: excludeText || undefined,
@@ -46,21 +50,14 @@ export default function TranslatePage() {
       });
       setResult(response);
       historyStorage.addSingleTranslation(response, targetLang);
-      toast.success('Translation complete!');
+      toast.success('Translation complete');
     } catch (error) {
-      const axiosError = error as AxiosError<{
-        message: string;
-        error: string;
-      }>;
-      toast.error(
-        axiosError.response?.data?.message ||
-          axiosError.response?.data?.error ||
-          'Translation failed'
-      );
+      toast.error(getErrorMessage(error, 'Translation failed'));
     }
   };
 
   const handleReset = () => {
+    abortControllerRef.current?.abort();
     setFile(null);
     setResult(null);
     setTargetLang('en');
@@ -73,7 +70,8 @@ export default function TranslatePage() {
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Translate Image</h1>
         <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-          Upload an image and translate text to your target language
+          Upload an image — get back a new image with the text translated in
+          place
         </p>
       </div>
 
@@ -120,8 +118,36 @@ export default function TranslatePage() {
                 disabled={translateMutation.isPending}
               />
               <p className="text-muted-foreground text-xs">
-                Comma-separated text patterns to exclude from translation
+                Comma-separated exact strings to keep untranslated — e.g.{' '}
+                <code className="bg-muted rounded px-1">Nike,@brand,©2024</code>
               </p>
+              {excludeText.trim() &&
+                (() => {
+                  const entries = excludeText
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                  const hasEmpty = excludeText.includes(',,');
+                  const hasTooLong = entries.some(e => e.length > 50);
+                  if (hasEmpty)
+                    return (
+                      <p className="text-xs text-amber-600">
+                        Remove consecutive commas — empty entries are ignored
+                      </p>
+                    );
+                  if (hasTooLong)
+                    return (
+                      <p className="text-xs text-amber-600">
+                        Some entries are very long — only exact matches work
+                      </p>
+                    );
+                  return (
+                    <p className="text-muted-foreground text-xs">
+                      {entries.length} entr{entries.length === 1 ? 'y' : 'ies'}{' '}
+                      will be excluded
+                    </p>
+                  );
+                })()}
             </div>
 
             <div className="flex gap-3">
@@ -133,15 +159,24 @@ export default function TranslatePage() {
                 {translateMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Translate
+                {translateMutation.isPending ? 'Translating...' : 'Translate'}
               </Button>
-              {(file || result) && (
+              {translateMutation.isPending && (
                 <Button
                   variant="outline"
-                  onClick={handleReset}
-                  disabled={translateMutation.isPending}
+                  onClick={() => {
+                    abortControllerRef.current?.abort();
+                    translateMutation.reset();
+                  }}
                 >
-                  Reset
+                  <X className="mr-2 h-4 w-4" />
+                  Cancel
+                </Button>
+              )}
+              {(file || result) && !translateMutation.isPending && (
+                <Button variant="outline" onClick={handleReset}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  New
                 </Button>
               )}
             </div>
@@ -151,14 +186,15 @@ export default function TranslatePage() {
         {/* Result */}
         <div>
           {translateMutation.isPending && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="text-primary h-8 w-8 animate-spin" />
-                <p className="text-muted-foreground mt-4">
-                  Processing your image...
-                </p>
+            <Card className="animate-in fade-in-0 duration-300">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="relative">
+                  <div className="bg-primary/10 absolute inset-0 animate-ping rounded-full" />
+                  <Loader2 className="text-primary relative h-10 w-10 animate-spin" />
+                </div>
+                <p className="mt-6 font-medium">Processing your image...</p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  This may take up to a minute
+                  Detecting text, translating, and rendering back onto the image
                 </p>
               </CardContent>
             </Card>
@@ -169,10 +205,14 @@ export default function TranslatePage() {
           )}
 
           {!result && !translateMutation.isPending && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-muted-foreground">
-                  Your translation result will appear here
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-muted-foreground font-medium">
+                  Your translated image will appear here
+                </p>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  You&apos;ll get the translated image, the original with text
+                  removed, and a region-by-region text breakdown
                 </p>
               </CardContent>
             </Card>

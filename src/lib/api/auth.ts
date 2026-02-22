@@ -11,7 +11,15 @@ import type {
   ApiKeyCreateRequest,
   ApiKeyCreateResponse,
   ApiKeyListResponse,
+  ApiKeyRenameRequest,
+  ApiKeyRenameResponse,
+  ApiKeyStatsResponse,
   MessageResponse,
+  VerifyEmailRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  UpdateProfileRequest,
+  UsageStatsResponse,
 } from '@/types';
 
 export const authApi = {
@@ -70,6 +78,14 @@ export const authApi = {
   },
 
   /**
+   * Update current user's profile (name, email)
+   */
+  updateProfile: async (data: UpdateProfileRequest): Promise<User> => {
+    const response = await apiClient.patch<User>(ENDPOINTS.ME, data);
+    return response.data;
+  },
+
+  /**
    * Create a new API key
    */
   createApiKey: async (
@@ -98,6 +114,97 @@ export const authApi = {
   revokeApiKey: async (keyId: string): Promise<MessageResponse> => {
     const response = await apiClient.delete<MessageResponse>(
       `${ENDPOINTS.API_KEYS}/${keyId}`
+    );
+    return response.data;
+  },
+
+  /**
+   * Rename an API key
+   */
+  renameApiKey: async (
+    keyId: string,
+    data: ApiKeyRenameRequest
+  ): Promise<ApiKeyRenameResponse> => {
+    const response = await apiClient.patch<ApiKeyRenameResponse>(
+      `${ENDPOINTS.API_KEYS}/${keyId}`,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Get usage stats for a specific API key
+   */
+  getApiKeyStats: async (keyId: string): Promise<ApiKeyStatsResponse> => {
+    const response = await apiClient.get<ApiKeyStatsResponse>(
+      ENDPOINTS.API_KEY_STATS(keyId)
+    );
+    return response.data;
+  },
+
+  /**
+   * Resend email verification link to the current user
+   */
+  resendVerification: async (): Promise<MessageResponse> => {
+    const response = await apiClient.post<MessageResponse>(
+      ENDPOINTS.RESEND_VERIFICATION
+    );
+    return response.data;
+  },
+
+  /**
+   * Verify email using token from verification email
+   */
+  verifyEmail: async (data: VerifyEmailRequest): Promise<MessageResponse> => {
+    const response = await apiClient.post<MessageResponse>(
+      ENDPOINTS.VERIFY_EMAIL,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Request a password reset email
+   */
+  forgotPassword: async (
+    data: ForgotPasswordRequest
+  ): Promise<MessageResponse> => {
+    const response = await apiClient.post<MessageResponse>(
+      ENDPOINTS.FORGOT_PASSWORD,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Reset password using token from reset email
+   */
+  resetPassword: async (
+    data: ResetPasswordRequest
+  ): Promise<MessageResponse> => {
+    const response = await apiClient.post<MessageResponse>(
+      ENDPOINTS.RESET_PASSWORD,
+      data
+    );
+    return response.data;
+  },
+
+  /**
+   * Get usage stats for the current user
+   */
+  getUsageStats: async (): Promise<UsageStatsResponse> => {
+    const response = await apiClient.get<UsageStatsResponse>(
+      ENDPOINTS.USAGE_STATS
+    );
+    return response.data;
+  },
+
+  /**
+   * Delete the current user's account permanently
+   */
+  deleteAccount: async (): Promise<MessageResponse> => {
+    const response = await apiClient.delete<MessageResponse>(
+      ENDPOINTS.DELETE_ACCOUNT
     );
     return response.data;
   },

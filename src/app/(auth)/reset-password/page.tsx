@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Loader2, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,61 +18,92 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useAuth } from '@/hooks';
-import { registerSchema, type RegisterFormData } from '@/lib/validators';
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormData,
+} from '@/lib/validators';
+import { authApi } from '@/lib/api/auth';
 import { AxiosError } from 'axios';
 
-function getPasswordStrength(password: string): {
-  score: number;
-  label: string;
-  color: string;
-} {
-  if (!password) return { score: 0, label: '', color: '' };
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (password.length >= 12) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
+function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
 
-  if (score <= 2) return { score, label: 'Weak', color: 'bg-destructive' };
-  if (score === 3) return { score, label: 'Fair', color: 'bg-amber-500' };
-  if (score === 4) return { score, label: 'Good', color: 'bg-blue-500' };
-  return { score, label: 'Strong', color: 'bg-green-500' };
-}
-
-function SignupForm() {
-  const { registerAsync, isRegistering } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordValue, setPasswordValue] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [succeeded, setSucceeded] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  const strength = getPasswordStrength(passwordValue);
+  if (!token) {
+    return (
+      <Card className="mx-4 w-full max-w-md sm:mx-0">
+        <CardContent className="flex flex-col items-center gap-4 px-4 py-10 sm:px-6">
+          <div className="bg-destructive/10 flex h-14 w-14 items-center justify-center rounded-full">
+            <XCircle className="text-destructive h-7 w-7" />
+          </div>
+          <div className="space-y-1 text-center">
+            <h2 className="text-lg font-semibold sm:text-xl">Invalid link</h2>
+            <p className="text-muted-foreground text-sm">
+              This password reset link is missing a token. Please request a new
+              one.
+            </p>
+          </div>
+          <Link
+            href="/forgot-password"
+            className="text-primary text-sm hover:underline"
+          >
+            Request new link
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
 
-  const onSubmit = async (data: RegisterFormData) => {
+  if (succeeded) {
+    return (
+      <Card className="mx-4 w-full max-w-md sm:mx-0">
+        <CardContent className="flex flex-col items-center gap-4 px-4 py-10 sm:px-6">
+          <div className="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-full">
+            <CheckCircle className="text-primary h-7 w-7" />
+          </div>
+          <div className="space-y-1 text-center">
+            <h2 className="text-lg font-semibold sm:text-xl">
+              Password updated
+            </h2>
+            <p className="text-muted-foreground text-sm">
+              Your password has been reset. You can now sign in with your new
+              password.
+            </p>
+          </div>
+          <Link href="/login" className="text-primary text-sm hover:underline">
+            Sign in
+          </Link>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    setIsLoading(true);
     try {
-      const result = await registerAsync({
-        email: data.email,
-        password: data.password,
-        name: data.name,
-      });
-      toast.success('Account created successfully!', {
-        description: `Your API key: ${result.api_key.slice(0, 12)}... (Check your dashboard)`,
-        duration: 10000,
-      });
+      await authApi.resetPassword({ token, new_password: data.new_password });
+      setSucceeded(true);
     } catch (error) {
       const axiosError = error as AxiosError<{ detail: string }>;
       toast.error(
-        axiosError.response?.data?.detail || 'Failed to create account'
+        axiosError.response?.data?.detail ||
+          'Reset link may be expired. Please request a new one.'
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -79,48 +111,24 @@ function SignupForm() {
     <Card className="mx-4 w-full max-w-md sm:mx-0">
       <CardHeader className="space-y-2 px-4 sm:space-y-3 sm:px-6">
         <CardTitle className="text-xl font-bold sm:text-2xl">
-          Create an account
+          Reset password
         </CardTitle>
         <CardDescription className="text-sm">
-          Enter your details to create your account
+          Enter your new password below
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4 px-4 sm:space-y-6 sm:px-6">
           <div className="space-y-2">
-            <Label htmlFor="name">Name (optional)</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Your name"
-              autoComplete="name"
-              {...register('name')}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              {...register('email')}
-            />
-            {errors.email && (
-              <p className="text-destructive text-sm">{errors.email.message}</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="new_password">New password</Label>
             <div className="relative">
               <Input
-                id="password"
+                id="new_password"
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Create a password"
+                placeholder="Create a new password"
                 autoComplete="new-password"
-                {...register('password')}
+                {...register('new_password')}
                 className="pr-10"
-                onChange={e => setPasswordValue(e.target.value)}
               />
               <Button
                 type="button"
@@ -128,7 +136,6 @@ function SignupForm() {
                 size="sm"
                 className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
                   <EyeOff className="text-muted-foreground h-4 w-4" />
@@ -140,36 +147,19 @@ function SignupForm() {
                 </span>
               </Button>
             </div>
-            {passwordValue && (
-              <div className="space-y-1">
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div
-                      key={i}
-                      className={`h-1 flex-1 rounded-full transition-colors ${
-                        i <= strength.score ? strength.color : 'bg-muted'
-                      }`}
-                    />
-                  ))}
-                </div>
-                <p className="text-muted-foreground text-xs">
-                  {strength.label}
-                </p>
-              </div>
-            )}
-            {errors.password && (
+            {errors.new_password && (
               <p className="text-destructive text-sm">
-                {errors.password.message}
+                {errors.new_password.message}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
+            <Label htmlFor="confirmPassword">Confirm new password</Label>
             <div className="relative">
               <Input
                 id="confirmPassword"
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Confirm your password"
+                placeholder="Confirm your new password"
                 autoComplete="new-password"
                 {...register('confirmPassword')}
                 className="pr-10"
@@ -180,7 +170,6 @@ function SignupForm() {
                 size="sm"
                 className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                title={showConfirmPassword ? 'Hide password' : 'Show password'}
               >
                 {showConfirmPassword ? (
                   <EyeOff className="text-muted-foreground h-4 w-4" />
@@ -200,16 +189,13 @@ function SignupForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6">
-          <Button type="submit" className="w-full" disabled={isRegistering}>
-            {isRegistering && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create account
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Set new password
           </Button>
           <p className="text-muted-foreground text-center text-xs sm:text-sm">
-            Already have an account?{' '}
-            <Link
-              href="/login"
-              className="text-primary focus-visible:ring-ring/50 rounded hover:underline focus-visible:ring-2 focus-visible:outline-none"
-            >
+            Remember your password?{' '}
+            <Link href="/login" className="text-primary hover:underline">
               Sign in
             </Link>
           </p>
@@ -219,7 +205,7 @@ function SignupForm() {
   );
 }
 
-export default function SignupPage() {
+export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
@@ -230,7 +216,7 @@ export default function SignupPage() {
         </Card>
       }
     >
-      <SignupForm />
+      <ResetPasswordForm />
     </Suspense>
   );
 }

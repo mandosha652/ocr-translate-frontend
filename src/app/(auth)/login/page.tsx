@@ -95,7 +95,7 @@ function LoginForm() {
               <Label htmlFor="password">Password</Label>
               <Link
                 href="/forgot-password"
-                className="text-muted-foreground hover:text-primary text-sm"
+                className="text-muted-foreground hover:text-primary focus-visible:ring-ring/50 rounded text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
                 Forgot password?
               </Link>
@@ -115,11 +115,12 @@ function LoginForm() {
                 size="sm"
                 className="absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? (
-                  <EyeOff className="text-muted-foreground h-4 w-4" />
+                  <EyeOff className="text-muted-foreground h-4 w-4 transition-opacity" />
                 ) : (
-                  <Eye className="text-muted-foreground h-4 w-4" />
+                  <Eye className="text-muted-foreground h-4 w-4 transition-opacity" />
                 )}
                 <span className="sr-only">
                   {showPassword ? 'Hide password' : 'Show password'}

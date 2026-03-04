@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 
 import { getLangName } from '@/components/features/history/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTranslationHistory } from '@/hooks';
+import { useListBatches, useTranslationHistory } from '@/hooks';
 import { downloadHistoryJSON } from '@/lib/utils/blob';
 
 import { BatchHistoryTab } from './_components/BatchHistoryTab';
@@ -39,7 +39,7 @@ export default function HistoryPage() {
   const finishedBatches = useMemo(
     () =>
       (batches ?? []).filter(
-        b => b.status !== 'pending' && b.status !== 'processing'
+        (b: any) => b.status !== 'pending' && b.status !== 'processing'
       ),
     [batches]
   );
@@ -58,8 +58,10 @@ export default function HistoryPage() {
   const filteredBatches = useMemo(() => {
     if (!searchQuery.trim()) return finishedBatches;
     const q = searchQuery.toLowerCase();
-    return finishedBatches.filter(b =>
-      b.target_languages.some(l => getLangName(l).toLowerCase().includes(q))
+    return finishedBatches.filter((b: any) =>
+      b.target_languages.some((l: any) =>
+        getLangName(l).toLowerCase().includes(q)
+      )
     );
   }, [finishedBatches, searchQuery]);
 

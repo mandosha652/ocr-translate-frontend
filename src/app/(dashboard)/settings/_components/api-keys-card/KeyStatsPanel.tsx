@@ -3,6 +3,7 @@
 import { Calendar } from 'lucide-react';
 
 import { useApiKeyStats } from '@/hooks';
+import { formatExpiry } from '@/lib/utils/date';
 
 interface KeyStatsPanelProps {
   keyId: string;

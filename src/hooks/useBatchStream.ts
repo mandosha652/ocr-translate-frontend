@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
 import { API_BASE_URL, ENDPOINTS } from '@/lib/constants';
 
 export interface BatchProgressEvent {
@@ -35,11 +36,13 @@ export function useBatchStream(
   useEffect(() => {
     if (!batchId || !enabled) return;
 
+    let cancelled = false;
     const url = `${API_BASE_URL}${ENDPOINTS.BATCH_STREAM(batchId)}`;
     const es = new EventSource(url, { withCredentials: true });
     esRef.current = es;
 
     es.onmessage = (event: MessageEvent) => {
+      if (cancelled) return;
       try {
         const data: BatchProgressEvent = JSON.parse(event.data);
         setProgress(data);
@@ -53,12 +56,14 @@ export function useBatchStream(
     };
 
     es.onerror = () => {
+      if (cancelled) return;
       es.close();
       esRef.current = null;
       setError(true);
     };
 
     return () => {
+      cancelled = true;
       es.close();
       esRef.current = null;
     };

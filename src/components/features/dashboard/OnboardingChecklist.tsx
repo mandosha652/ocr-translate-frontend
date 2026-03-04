@@ -1,16 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
 import {
-  CheckCircle2,
-  Circle,
-  ImageIcon,
-  Layers,
-  Key,
   BookOpen,
+  CheckCircle2,
+  ImageIcon,
+  Key,
+  Layers,
   X,
 } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -19,9 +19,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { useApiKeys } from '@/hooks';
 import type { UsageStatsResponse } from '@/types';
+
+import { ChecklistItem } from './ChecklistItem';
 
 const DOCS_KEY = 'onboarding_docs_read';
 const DISMISSED_KEY = 'onboarding_dismissed';
@@ -163,47 +164,19 @@ export function OnboardingChecklist({ usage }: Props) {
 
       <CardContent>
         <ol className="space-y-3">
-          {STEPS.map(step => {
-            const done = completed[step.id];
-            const Icon = step.icon;
-
-            return (
-              <li key={step.id} className="flex items-start gap-3">
-                {done ? (
-                  <CheckCircle2 className="text-primary mt-0.5 h-5 w-5 shrink-0" />
-                ) : (
-                  <Circle className="text-muted-foreground/40 mt-0.5 h-5 w-5 shrink-0" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p
-                    className={`text-sm leading-snug font-medium ${done ? 'text-muted-foreground line-through' : ''}`}
-                  >
-                    {step.label}
-                  </p>
-                  {!done && (
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                      {step.description}
-                    </p>
-                  )}
-                </div>
-                {!done && (
-                  <Link
-                    href={step.href}
-                    onClick={step.id === 'docs' ? handleDocsClick : undefined}
-                  >
-                    <Button
-                      size="xs"
-                      variant="outline"
-                      className="shrink-0 gap-1.5"
-                    >
-                      <Icon className="h-3 w-3" />
-                      {step.cta}
-                    </Button>
-                  </Link>
-                )}
-              </li>
-            );
-          })}
+          {STEPS.map(step => (
+            <ChecklistItem
+              key={step.id}
+              id={step.id}
+              label={step.label}
+              description={step.description}
+              href={step.href}
+              icon={step.icon}
+              cta={step.cta}
+              completed={completed[step.id]}
+              onDocsClick={handleDocsClick}
+            />
+          ))}
         </ol>
       </CardContent>
     </Card>

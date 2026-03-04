@@ -1,51 +1,34 @@
 'use client';
 
+import {
+  History,
+  Image,
+  Languages,
+  Layers,
+  LayoutDashboard,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  X,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
-import {
-  Languages,
-  LayoutDashboard,
-  Image,
-  Layers,
-  History,
-  Settings,
-  LogOut,
-  Moon,
-  Sun,
-  Menu,
-  X,
-  HelpCircle,
-  Newspaper,
-} from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useState } from 'react';
+
+import { DesktopNav } from '@/components/layout/DesktopNav';
+import { LogoutDialog } from '@/components/layout/LogoutDialog';
+import { MobileNav } from '@/components/layout/MobileNav';
+import { NotificationBell } from '@/components/layout/NotificationBell';
+import { UserDropdown } from '@/components/layout/UserDropdown';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useAuth } from '@/hooks';
-import { cn } from '@/lib/utils';
-import { NotificationBell } from '@/components/layout/NotificationBell';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -91,27 +74,7 @@ export function DashboardNav() {
             <Languages className="h-6 w-6" />
             <span className="text-lg font-semibold sm:text-xl">ImgText</span>
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
-            {navItems.map(item => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="focus-visible:ring-ring/50 rounded-md focus-visible:ring-2 focus-visible:outline-none"
-              >
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    'gap-2',
-                    pathname === item.href && 'bg-accent font-medium'
-                  )}
-                  tabIndex={-1}
-                >
-                  <item.icon className="h-4 w-4" />
-                  {item.label}
-                </Button>
-              </Link>
-            ))}
-          </nav>
+          <DesktopNav navItems={navItems} pathname={pathname} />
         </div>
 
         <div className="flex items-center gap-2">
@@ -135,55 +98,11 @@ export function DashboardNav() {
             </TooltipContent>
           </Tooltip>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative hidden h-9 w-9 rounded-full sm:inline-flex"
-              >
-                <Avatar className="h-9 w-9">
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <div className="flex items-center gap-2 p-2">
-                <div className="flex flex-col space-y-1">
-                  {user?.name && (
-                    <p className="text-sm font-medium">{user.name}</p>
-                  )}
-                  <p className="text-muted-foreground text-xs">{user?.email}</p>
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/settings">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/help">
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  Help &amp; FAQ
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/changelog">
-                  <Newspaper className="mr-2 h-4 w-4" />
-                  What&apos;s New
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setLogoutDialogOpen(true)}
-                className="text-destructive"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <UserDropdown
+            user={user}
+            initials={initials}
+            onLogout={() => setLogoutDialogOpen(true)}
+          />
 
           <Button
             variant="ghost"
@@ -201,97 +120,23 @@ export function DashboardNav() {
         </div>
       </div>
 
-      {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="animate-in slide-in-from-top-2 border-t duration-200 md:hidden">
-          <nav className="container mx-auto max-w-6xl px-4 py-4">
-            <div className="flex flex-col space-y-1">
-              {navItems.map(item => (
-                <Link key={item.href} href={item.href}>
-                  <Button
-                    variant="ghost"
-                    className={cn(
-                      'w-full justify-start gap-3',
-                      pathname === item.href && 'bg-accent'
-                    )}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <item.icon className="h-5 w-5" />
-                    {item.label}
-                  </Button>
-                </Link>
-              ))}
-              <div className="mt-3 space-y-1 border-t pt-3">
-                <div className="flex items-center gap-3 px-4 py-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback>{initials}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col space-y-0.5">
-                    {user?.name && (
-                      <p className="text-sm font-medium">{user.name}</p>
-                    )}
-                    <p className="text-muted-foreground text-xs">
-                      {user?.email}
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-3"
-                  onClick={() => {
-                    setTheme(theme === 'dark' ? 'light' : 'dark');
-                    setMobileMenuOpen(false);
-                  }}
-                >
-                  {theme === 'dark' ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
-                  {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-                </Button>
-                <Button
-                  variant="ghost"
-                  className="text-destructive w-full justify-start gap-3"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setLogoutDialogOpen(true);
-                  }}
-                >
-                  <LogOut className="h-5 w-5" />
-                  Log out
-                </Button>
-              </div>
-            </div>
-          </nav>
-        </div>
+        <MobileNav
+          navItems={navItems}
+          pathname={pathname}
+          user={user}
+          initials={initials}
+          onClose={() => setMobileMenuOpen(false)}
+          onLogout={() => setLogoutDialogOpen(true)}
+        />
       )}
 
-      <AlertDialog open={logoutDialogOpen} onOpenChange={setLogoutDialogOpen}>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Log out?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You will be signed out of your account.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoggingOut}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              disabled={isLoggingOut}
-              onClick={e => {
-                e.preventDefault();
-                handleLogoutConfirm();
-              }}
-            >
-              {isLoggingOut ? 'Logging out…' : 'Log out'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <LogoutDialog
+        open={logoutDialogOpen}
+        onOpenChange={setLogoutDialogOpen}
+        onConfirm={handleLogoutConfirm}
+        isLoggingOut={isLoggingOut}
+      />
     </header>
   );
 }

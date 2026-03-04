@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '@/types';
+
 import { shouldBypassAuth } from '@/config/env';
+import type { User } from '@/types';
 
 // Mock user for development
 const DEV_USER: User = {

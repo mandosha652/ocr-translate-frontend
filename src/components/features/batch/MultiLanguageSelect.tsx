@@ -1,12 +1,14 @@
 'use client';
 
-import { X, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { Check, X } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { SUPPORTED_LANGUAGES } from '@/types';
+import { useLanguageSelection } from '@/hooks/batch/useLanguageSelection';
 import { MAX_TARGET_LANGUAGES } from '@/lib/constants';
+import { cn } from '@/lib/utils';
+import { SUPPORTED_LANGUAGES } from '@/types';
 
 interface MultiLanguageSelectProps {
   selectedLanguages: string[];
@@ -21,21 +23,12 @@ export function MultiLanguageSelect({
   label,
   disabled,
 }: MultiLanguageSelectProps) {
-  const toggleLanguage = (code: string) => {
-    if (selectedLanguages.includes(code)) {
-      onChange(selectedLanguages.filter(l => l !== code));
-    } else if (selectedLanguages.length < MAX_TARGET_LANGUAGES) {
-      onChange([...selectedLanguages, code]);
-    }
-  };
-
-  const removeLanguage = (code: string) => {
-    onChange(selectedLanguages.filter(l => l !== code));
-  };
-
-  const getLanguageName = (code: string) => {
-    return SUPPORTED_LANGUAGES.find(l => l.code === code)?.name || code;
-  };
+  const {
+    toggleLanguage,
+    removeLanguage,
+    getLanguageName,
+    isLanguageDisabled,
+  } = useLanguageSelection(selectedLanguages, onChange);
 
   return (
     <div className="space-y-3">
@@ -72,9 +65,7 @@ export function MultiLanguageSelect({
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {SUPPORTED_LANGUAGES.map(lang => {
             const isSelected = selectedLanguages.includes(lang.code);
-            const isDisabled =
-              disabled ||
-              (!isSelected && selectedLanguages.length >= MAX_TARGET_LANGUAGES);
+            const isDisabledLang = disabled || isLanguageDisabled(lang.code);
 
             return (
               <Button
@@ -86,7 +77,7 @@ export function MultiLanguageSelect({
                   isSelected && 'bg-primary/10 text-primary hover:bg-primary/20'
                 )}
                 onClick={() => toggleLanguage(lang.code)}
-                disabled={isDisabled}
+                disabled={isDisabledLang}
               >
                 {isSelected ? (
                   <Check className="h-3 w-3" />

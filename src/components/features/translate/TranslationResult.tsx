@@ -1,22 +1,20 @@
 'use client';
 
-import { useState } from 'react';
-import { Download, ExternalLink, Copy, Check, Info } from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import { Info } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import type { TranslateResponse } from '@/types';
-import { getImageUrl } from '@/lib/utils';
 import { CONFIDENCE_THRESHOLD } from '@/lib/constants';
-import { ZoomableImage } from './ZoomableImage';
+import type { TranslateResponse } from '@/types';
+
+import { ImageTabContent } from './ImageTabContent';
 import { TextRegionsPanel } from './TextRegionsPanel';
 
 interface TranslationResultProps {
@@ -24,33 +22,6 @@ interface TranslationResultProps {
 }
 
 export function TranslationResult({ result }: TranslationResultProps) {
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
-
-  const copyUrl = async (url: string) => {
-    await navigator.clipboard.writeText(getImageUrl(url));
-    setCopiedUrl(url);
-    toast.success('URL copied to clipboard');
-    setTimeout(() => setCopiedUrl(null), 2000);
-  };
-
-  const downloadImage = async (url: string, filename: string) => {
-    try {
-      const response = await fetch(getImageUrl(url));
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      toast.success('Image downloaded');
-    } catch {
-      toast.error('Failed to download image');
-    }
-  };
-
   const lowConfidenceRegions = result.regions.filter(
     r => r.confidence < CONFIDENCE_THRESHOLD
   );
@@ -102,105 +73,32 @@ export function TranslationResult({ result }: TranslationResultProps) {
             </TabsList>
 
             <TabsContent value="translated" className="mt-4">
-              <div className="space-y-4">
-                <ZoomableImage
-                  src={getImageUrl(result.translated_image_url)}
-                  alt="Translated"
-                  priority
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() =>
-                      downloadImage(
-                        result.translated_image_url,
-                        'translated.png'
-                      )
-                    }
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    aria-label={
-                      copiedUrl === result.translated_image_url
-                        ? 'Copied'
-                        : 'Copy URL'
-                    }
-                    onClick={() => copyUrl(result.translated_image_url)}
-                  >
-                    {copiedUrl === result.translated_image_url ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                  <Button variant="outline" size="sm" asChild>
-                    <a
-                      href={getImageUrl(result.translated_image_url)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label="Open in new tab"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
+              <ImageTabContent
+                imageUrl={result.translated_image_url}
+                alt="Translated"
+                filename="translated.png"
+                showCopyButton
+                showExternalLink
+                priority
+              />
             </TabsContent>
 
             <TabsContent value="original" className="mt-4">
-              <div className="space-y-4">
-                <ZoomableImage
-                  src={getImageUrl(result.original_image_url)}
-                  alt="Original"
-                />
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      downloadImage(result.original_image_url, 'original.png')
-                    }
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Download
-                  </Button>
-                </div>
-              </div>
+              <ImageTabContent
+                imageUrl={result.original_image_url}
+                alt="Original"
+                filename="original.png"
+              />
             </TabsContent>
 
             <TabsContent value="clean" className="mt-4">
               {result.clean_image_url ? (
-                <div className="space-y-4">
-                  <p className="text-muted-foreground text-sm">
-                    Original text has been removed via inpainting — the
-                    background is reconstructed where text was. Useful as a
-                    clean base for custom overlays.
-                  </p>
-                  <ZoomableImage
-                    src={getImageUrl(result.clean_image_url)}
-                    alt="Text removed"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        downloadImage(
-                          result.clean_image_url!,
-                          'text-removed.png'
-                        )
-                      }
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                    </Button>
-                  </div>
-                </div>
+                <ImageTabContent
+                  imageUrl={result.clean_image_url}
+                  alt="Text removed"
+                  filename="text-removed.png"
+                  description="Original text has been removed via inpainting — the background is reconstructed where text was. Useful as a clean base for custom overlays."
+                />
               ) : (
                 <p className="text-muted-foreground py-8 text-center">
                   Text-removed image not available

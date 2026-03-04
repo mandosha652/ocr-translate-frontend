@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
+import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface FaqItem {
@@ -36,22 +36,21 @@ export function FaqAccordion({ faqs }: { faqs: FaqItem[] }) {
                 )}
               />
             </button>
-            <AnimatePresence initial={false}>
-              {isOpen && (
-                <motion.div
-                  id={`faq-answer-${i}`}
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="text-muted-foreground border-t px-4 py-3 text-sm leading-relaxed">
-                    {faq.a}
-                  </div>
-                </motion.div>
+            <div
+              id={`faq-answer-${i}`}
+              className={cn(
+                'grid transition-[grid-template-rows,opacity] duration-200 ease-in-out',
+                isOpen
+                  ? 'grid-rows-[1fr] opacity-100'
+                  : 'grid-rows-[0fr] opacity-0'
               )}
-            </AnimatePresence>
+            >
+              <div className="overflow-hidden">
+                <div className="text-muted-foreground border-t px-4 py-3 text-sm leading-relaxed">
+                  {faq.a}
+                </div>
+              </div>
+            </div>
           </div>
         );
       })}

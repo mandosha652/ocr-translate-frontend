@@ -1,31 +1,38 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
 import {
+  ChevronDown,
   Clock,
   Download,
   ExternalLink,
-  ChevronDown,
   ImageIcon,
 } from 'lucide-react';
+import Image from 'next/image';
+import { useId } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { useCollapsible } from '@/hooks/shared/useCollapsible';
 import { cn, getImageUrl } from '@/lib/utils';
 import type { SingleTranslationRecord } from '@/types';
-import { getLangName, formatDate, downloadFile } from './utils';
+
+import { downloadFile, formatDate, getLangName } from './utils';
 
 interface SingleCardProps {
   item: SingleTranslationRecord;
 }
 
 export function SingleCard({ item }: SingleCardProps) {
-  const [expanded, setExpanded] = useState(false);
+  const { expanded, toggle } = useCollapsible();
+  const panelId = useId();
   const isExpired = item.is_expired;
 
   return (
     <div className="group bg-card overflow-hidden rounded-xl border transition-shadow hover:shadow-sm">
       <button
+        aria-expanded={expanded}
+        aria-controls={panelId}
         className="focus-visible:ring-ring/50 flex w-full cursor-pointer items-center gap-3 p-4 text-left focus-visible:ring-2 focus-visible:outline-none"
-        onClick={() => setExpanded(v => !v)}
+        onClick={toggle}
       >
         <div className="bg-muted relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border">
           {isExpired ? (
@@ -103,7 +110,7 @@ export function SingleCard({ item }: SingleCardProps) {
       </button>
 
       {expanded && (
-        <div className="border-t px-4 pt-3 pb-4">
+        <div id={panelId} className="border-t px-4 pt-3 pb-4">
           {isExpired ? (
             <p className="text-muted-foreground text-sm">
               Image results have expired and are no longer available.
@@ -125,14 +132,16 @@ export function SingleCard({ item }: SingleCardProps) {
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-xs"
                   onClick={() =>
                     downloadFile(item.original_image_url, 'original.png')
                   }
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <Download className="h-3.5 w-3.5" /> Download
-                </button>
+                </Button>
               </div>
 
               <div className="space-y-2">
@@ -150,17 +159,19 @@ export function SingleCard({ item }: SingleCardProps) {
                     sizes="(max-width: 640px) 100vw, 50vw"
                   />
                 </div>
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-1.5 text-xs"
                   onClick={() =>
                     downloadFile(
                       getImageUrl(item.translated_image_url),
                       `translated-${item.target_lang}.png`
                     )
                   }
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border py-1.5 text-xs transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                   <Download className="h-3.5 w-3.5" /> Download
-                </button>
+                </Button>
               </div>
             </div>
           )}

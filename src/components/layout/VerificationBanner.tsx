@@ -1,7 +1,8 @@
 'use client';
 
+import { CheckCircle, Loader2, MailWarning } from 'lucide-react';
 import { useState } from 'react';
-import { MailWarning, Loader2, CheckCircle } from 'lucide-react';
+
 import { useAuth } from '@/hooks';
 import { authApi } from '@/lib/api/auth';
 

@@ -1,11 +1,12 @@
 'use client';
 
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+
 import {
   Card,
   CardContent,
-  CardHeader,
   CardDescription,
+  CardHeader,
 } from '@/components/ui/card';
 import type { UsageStatsResponse } from '@/types';
 

@@ -1,9 +1,11 @@
 'use client';
 
+import { formatDistanceToNowStrict } from 'date-fns';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { formatDistanceToNowStrict } from 'date-fns';
+
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
 import { useNotificationStore } from '@/store/notificationStore';
 
 const TYPE_COLORS = {
@@ -64,12 +65,14 @@ export function NotificationBell() {
             Notifications
           </DropdownMenuLabel>
           {unreadCount > 0 && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-auto px-1.5 py-0.5 text-xs"
               onClick={markAllRead}
-              className="text-muted-foreground hover:text-foreground cursor-pointer text-xs transition-colors"
             >
               Mark all read
-            </button>
+            </Button>
           )}
         </div>
 

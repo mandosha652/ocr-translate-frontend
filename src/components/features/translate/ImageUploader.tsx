@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { Camera, Image as ImageIcon, Upload, X } from 'lucide-react';
 import Image from 'next/image';
+import { useCallback, useRef, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, Image as ImageIcon, Camera } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 import { Button } from '@/components/ui/button';
 import { MAX_FILE_SIZE_BYTES, MAX_FILE_SIZE_MB } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 interface ImageUploaderProps {
   onFileSelect: (file: File | null) => void;
@@ -141,10 +142,13 @@ export function ImageUploader({
         onChange={e => {
           const file = e.target.files?.[0];
           if (file) {
+            if (file.size > MAX_FILE_SIZE_BYTES) {
+              e.target.value = '';
+              return;
+            }
             onFileSelect(file);
             loadPreview(file);
           }
-          // Reset so the same file can be re-selected
           e.target.value = '';
         }}
       />

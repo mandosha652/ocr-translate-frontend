@@ -1,16 +1,18 @@
 'use client';
 
-import Image from 'next/image';
 import {
-  Loader2,
-  RefreshCw,
-  XCircle,
   CheckCircle2,
   ExternalLink,
   ImageIcon,
+  Loader2,
+  RefreshCw,
+  XCircle,
 } from 'lucide-react';
+import Image from 'next/image';
+
 import { cn, getImageUrl } from '@/lib/utils';
 import type { ImageResult } from '@/types';
+
 import { getLangName } from './utils';
 
 interface BatchImageTileProps {

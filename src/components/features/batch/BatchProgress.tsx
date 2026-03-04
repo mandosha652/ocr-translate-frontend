@@ -1,25 +1,23 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
   AlertCircle,
   Ban,
+  CheckCircle2,
+  Clock,
+  Loader2,
+  XCircle,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
+
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import type { BatchStatusResponse, BatchStatus, ImageStatus } from '@/types';
+import { Button } from '@/components/ui/button';
+import { BATCH_STATUS_CONFIG } from '@/lib/constants/ui';
+import { cn } from '@/lib/utils';
+import type { BatchStatus, BatchStatusResponse } from '@/types';
+
+import { ImageStatusList } from './ImageStatusList';
+import { ProgressBar } from './ProgressBar';
 
 interface BatchProgressProps {
   batchStatus: BatchStatusResponse;
@@ -27,34 +25,16 @@ interface BatchProgressProps {
   isCancelling: boolean;
 }
 
-const statusConfig: Record<
+const STATUS_ICONS: Record<
   BatchStatus,
-  {
-    label: string;
-    variant: 'default' | 'secondary' | 'destructive' | 'outline';
-    icon: React.ComponentType<{ className?: string }>;
-  }
+  React.ComponentType<{ className?: string }>
 > = {
-  pending: { label: 'Pending', variant: 'secondary', icon: Clock },
-  processing: { label: 'Processing', variant: 'default', icon: Loader2 },
-  completed: { label: 'Completed', variant: 'default', icon: CheckCircle2 },
-  partially_completed: {
-    label: 'Partially Completed',
-    variant: 'secondary',
-    icon: AlertCircle,
-  },
-  failed: { label: 'Failed', variant: 'destructive', icon: XCircle },
-  cancelled: { label: 'Cancelled', variant: 'outline', icon: Ban },
-};
-
-const imageStatusConfig: Record<
-  ImageStatus,
-  { icon: React.ComponentType<{ className?: string }>; color: string }
-> = {
-  pending: { icon: Clock, color: 'text-muted-foreground' },
-  processing: { icon: Loader2, color: 'text-primary' },
-  completed: { icon: CheckCircle2, color: 'text-green-500' },
-  failed: { icon: XCircle, color: 'text-destructive' },
+  pending: Clock,
+  processing: Loader2,
+  completed: CheckCircle2,
+  partially_completed: AlertCircle,
+  failed: XCircle,
+  cancelled: Ban,
 };
 
 export function BatchProgress({
@@ -65,8 +45,8 @@ export function BatchProgress({
   const { status, total_images, completed_count, failed_count, images } =
     batchStatus;
 
-  const config = statusConfig[status];
-  const StatusIcon = config.icon;
+  const config = BATCH_STATUS_CONFIG[status];
+  const StatusIcon = STATUS_ICONS[status];
 
   const progressValue =
     total_images > 0
@@ -79,7 +59,6 @@ export function BatchProgress({
     if (!isProcessing) return null;
     const processed = completed_count + failed_count;
     if (processed === 0) return null;
-    // Derive elapsed time purely from server timestamps to avoid Date.now() in render
     const updatedAt = batchStatus.updated_at
       ? Date.parse(batchStatus.updated_at)
       : null;
@@ -100,6 +79,7 @@ export function BatchProgress({
     batchStatus.created_at,
     batchStatus.updated_at,
   ]);
+
   const isFinished =
     status === 'completed' ||
     status === 'partially_completed' ||
@@ -135,19 +115,13 @@ export function BatchProgress({
         </Badge>
       </div>
 
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-1 text-sm">
-          <span className="text-muted-foreground font-medium">
-            {completed_count} completed · {failed_count} failed ·{' '}
-            {total_images - completed_count - failed_count} remaining
-            {estimatedTimeRemaining && (
-              <span className="ml-2">· {estimatedTimeRemaining}</span>
-            )}
-          </span>
-          <span className="font-semibold">{progressValue}%</span>
-        </div>
-        <Progress value={progressValue} className="h-2" />
-      </div>
+      <ProgressBar
+        progressValue={progressValue}
+        completedCount={completed_count}
+        failedCount={failed_count}
+        totalImages={total_images}
+        estimatedTimeRemaining={estimatedTimeRemaining}
+      />
 
       {failed_count > 0 && (
         <div className="text-destructive flex items-center gap-2 text-sm">
@@ -156,56 +130,7 @@ export function BatchProgress({
         </div>
       )}
 
-      <TooltipProvider>
-        <div className="max-h-48 space-y-2 overflow-y-auto">
-          {images.map(image => {
-            const imgConfig = imageStatusConfig[image.status];
-            const ImgIcon = imgConfig.icon;
-            const isLong = image.original_filename.length > 30;
-
-            return (
-              <div
-                key={image.image_id}
-                className="bg-muted/50 flex items-center justify-between rounded-lg px-3 py-2"
-              >
-                <div className="flex items-center gap-3 overflow-hidden">
-                  <ImgIcon
-                    className={cn(
-                      'h-4 w-4 shrink-0',
-                      imgConfig.color,
-                      image.status === 'processing' && 'animate-spin'
-                    )}
-                  />
-                  {isLong ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="cursor-default truncate text-sm">
-                          {image.original_filename}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>{image.original_filename}</TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <span className="truncate text-sm">
-                      {image.original_filename}
-                    </span>
-                  )}
-                </div>
-                {image.error && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="text-destructive ml-2 cursor-default truncate text-xs">
-                        {image.error}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{image.error}</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </TooltipProvider>
+      <ImageStatusList images={images} />
 
       {isProcessing && (
         <Button

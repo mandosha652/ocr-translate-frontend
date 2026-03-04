@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
-import { logIn, uniqueEmail, TEST_PASSWORD } from './helpers';
+import { expect,test } from '@playwright/test';
+
+import { logIn, TEST_PASSWORD,uniqueEmail } from './helpers';
 
 const TEST_EMAIL = uniqueEmail('auth');
 

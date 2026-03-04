@@ -1,5 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { expect,test } from '@playwright/test';
 import path from 'path';
+
 import { signUp, uniqueEmail } from './helpers';
 
 test.describe('History – single translation appears after translate', () => {

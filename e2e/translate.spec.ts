@@ -1,6 +1,7 @@
-import { test, expect } from '@playwright/test';
-import path from 'path';
+import { expect,test } from '@playwright/test';
 import fs from 'fs';
+import path from 'path';
+
 import { signUpAndSaveState, uniqueEmail } from './helpers';
 
 test.describe('Translate', () => {

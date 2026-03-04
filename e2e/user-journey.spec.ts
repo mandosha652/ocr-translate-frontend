@@ -5,14 +5,36 @@
  *   yarn test:e2e e2e/user-journey.spec.ts
  */
 
-import { test, expect } from '@playwright/test';
-import path from 'path';
+import { expect,test } from '@playwright/test';
 import fs from 'fs';
-import { uniqueEmail, TEST_PASSWORD } from './helpers';
+import path from 'path';
+
+import { TEST_PASSWORD,uniqueEmail } from './helpers';
 
 const FIXTURE = path.join(__dirname, 'fixtures/test-image.png');
 const email = uniqueEmail('journey');
 const name = 'Journey User';
+
+async function setupAuth(browser: any) {
+  const stateFile = path.join(__dirname, '.auth', `journey-${Date.now()}.json`);
+  fs.mkdirSync(path.dirname(stateFile), { recursive: true });
+
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  try {
+    await page.goto('/signup');
+    await page.locator('#name').fill(name);
+    await page.locator('#email').fill(email);
+    await page.locator('#password').fill(TEST_PASSWORD);
+    await page.locator('#confirmPassword').fill(TEST_PASSWORD);
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
+    await context.storageState({ path: stateFile });
+  } finally {
+    await context.close();
+  }
+  return stateFile;
+}
 
 test.describe('Full user journey', () => {
   test.describe.configure({ mode: 'serial' });
@@ -22,23 +44,7 @@ test.describe('Full user journey', () => {
 
   // Sign up once before all tests, save auth state to disk
   test.beforeAll(async ({ browser }) => {
-    stateFile = path.join(__dirname, '.auth', `journey-${Date.now()}.json`);
-    fs.mkdirSync(path.dirname(stateFile), { recursive: true });
-
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    try {
-      await page.goto('/signup');
-      await page.locator('#name').fill(name);
-      await page.locator('#email').fill(email);
-      await page.locator('#password').fill(TEST_PASSWORD);
-      await page.locator('#confirmPassword').fill(TEST_PASSWORD);
-      await page.getByRole('button', { name: 'Create account' }).click();
-      await expect(page).toHaveURL(/\/dashboard/, { timeout: 20_000 });
-      await context.storageState({ path: stateFile });
-    } finally {
-      await context.close();
-    }
+    stateFile = await setupAuth(browser);
   });
 
   // Inject saved cookies before each test (except 13 & 14 which test logout/login)

@@ -1,11 +1,11 @@
 import {
-  type Page,
-  expect,
   type Browser,
   type BrowserContext,
+  expect,
+  type Page,
 } from '@playwright/test';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 
 let userCounter = 0;
 

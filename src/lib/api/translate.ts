@@ -1,12 +1,14 @@
-import apiClient from './client';
 import { ENDPOINTS } from '@/lib/constants';
 import type {
-  TranslateResponse,
+  BatchCancelResponse,
   BatchCreateResponse,
   BatchStatusResponse,
-  BatchCancelResponse,
+  TranslateResponse,
   TranslationHistoryResponse,
+  TranslationJobResponse,
 } from '@/types';
+
+import apiClient from './client';
 
 export const translateApi = {
   /**
@@ -51,7 +53,7 @@ export const translateApi = {
    * Create a batch translation job (async)
    */
   createBatch: async (
-    files: File[],
+    input: { files: File[] } | { imageUrls: string[] },
     targetLanguages: string[],
     options?: {
       sourceLanguage?: string;
@@ -61,10 +63,13 @@ export const translateApi = {
   ): Promise<BatchCreateResponse> => {
     const formData = new FormData();
 
-    // Append all files
-    files.forEach(file => {
-      formData.append('files', file);
-    });
+    if ('files' in input) {
+      input.files.forEach(file => {
+        formData.append('files', file);
+      });
+    } else {
+      formData.append('image_urls', input.imageUrls.join(','));
+    }
 
     formData.append('target_languages', targetLanguages.join(','));
 
@@ -141,6 +146,42 @@ export const translateApi = {
       success: boolean;
       message: string;
     }>(ENDPOINTS.BATCH_RETRY_IMAGE(batchId, imageId));
+    return response.data;
+  },
+
+  /**
+   * Submit an async image translation job (returns job_id immediately)
+   */
+  submitTranslationJob: async (
+    input: { file: File } | { imageUrl: string },
+    targetLanguage: string,
+    options?: { sourceLanguage?: string }
+  ): Promise<TranslationJobResponse> => {
+    const formData = new FormData();
+    if ('file' in input) {
+      formData.append('image', input.file);
+    } else {
+      formData.append('image_url', input.imageUrl);
+    }
+    formData.append('target_language', targetLanguage);
+    if (options?.sourceLanguage) {
+      formData.append('source_language', options.sourceLanguage);
+    }
+    const response = await apiClient.post<TranslationJobResponse>(
+      ENDPOINTS.TRANSLATE_JOB_SUBMIT,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return response.data;
+  },
+
+  /**
+   * Poll async translation job status
+   */
+  getTranslationJob: async (jobId: string): Promise<TranslationJobResponse> => {
+    const response = await apiClient.get<TranslationJobResponse>(
+      ENDPOINTS.TRANSLATE_JOB_STATUS(jobId)
+    );
     return response.data;
   },
 

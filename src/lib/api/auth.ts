@@ -1,12 +1,5 @@
-import apiClient, { tokenStorage, resetAuthState } from './client';
 import { ENDPOINTS } from '@/lib/constants';
 import type {
-  LoginRequest,
-  LoginResponse,
-  RegisterRequest,
-  RegisterResponse,
-  User,
-  AuthTokens,
   ApiKey,
   ApiKeyCreateRequest,
   ApiKeyCreateResponse,
@@ -14,14 +7,22 @@ import type {
   ApiKeyRenameRequest,
   ApiKeyRenameResponse,
   ApiKeyStatsResponse,
-  MessageResponse,
-  VerifyEmailRequest,
+  AuthTokens,
+  ChangePasswordRequest,
   ForgotPasswordRequest,
+  LoginRequest,
+  LoginResponse,
+  MessageResponse,
+  RegisterRequest,
+  RegisterResponse,
   ResetPasswordRequest,
   UpdateProfileRequest,
-  ChangePasswordRequest,
   UsageStatsResponse,
+  User,
+  VerifyEmailRequest,
 } from '@/types';
+
+import apiClient, { resetAuthState, tokenStorage } from './client';
 
 export const authApi = {
   /**

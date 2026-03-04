@@ -3,6 +3,7 @@ import axios, {
   AxiosInstance,
   InternalAxiosRequestConfig,
 } from 'axios';
+
 import { API_BASE_URL } from '@/lib/constants';
 import { AuthTokens } from '@/types';
 
@@ -208,7 +209,7 @@ apiClient.interceptors.response.use(
 
         return apiClient(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError as AxiosError, null);
+        processQueue(refreshError as unknown as AxiosError, null);
         deleteCookie(ACCESS_TOKEN_KEY);
         void serverClearTokens();
         localStorage.removeItem('auth-storage');

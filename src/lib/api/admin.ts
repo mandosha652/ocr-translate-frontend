@@ -1,23 +1,25 @@
 import axios, { AxiosInstance } from 'axios';
+
 import { API_BASE_URL, ENDPOINTS } from '@/lib/constants';
 import type {
-  AdminPlatformStats,
-  AdminUserSummary,
-  AdminUserDetail,
-  AdminUpdateUser,
-  AdminImpersonateResponse,
-  AdminResendVerificationResponse,
   AdminApiKey,
-  AdminQueuedResponse,
-  AdminBatchSummary,
   AdminBatchDetail,
-  AdminPaginatedResponse,
-  AdminCostSummary,
-  AdminDailyCostEntry,
-  AdminUserCostRow,
-  AdminHealthServicesResponse,
+  AdminBatchSummary,
   AdminCleanupResult,
+  AdminCostSummary,
+  AdminCreateUser,
+  AdminDailyCostEntry,
+  AdminHealthServicesResponse,
+  AdminImpersonateResponse,
+  AdminPaginatedResponse,
+  AdminPlatformStats,
+  AdminQueuedResponse,
+  AdminResendVerificationResponse,
   AdminTenantFilesWipeResponse,
+  AdminUpdateUser,
+  AdminUserCostRow,
+  AdminUserDetail,
+  AdminUserSummary,
   AppHealthResponse,
 } from '@/types';
 
@@ -89,6 +91,14 @@ export const adminApi = {
       return { items: data, total: data.length, limit: data.length, offset: 0 };
     }
     return data;
+  },
+
+  createUser: async (data: AdminCreateUser): Promise<AdminUserSummary> => {
+    const res = await adminClient.post<AdminUserSummary>(
+      ENDPOINTS.ADMIN_USERS,
+      data
+    );
+    return res.data;
   },
 
   getUser: async (userId: string): Promise<AdminUserDetail> => {

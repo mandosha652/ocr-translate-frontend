@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+
 import { API_BASE_URL } from '@/lib/constants';
 
 export async function POST(request: NextRequest) {

@@ -38,8 +38,8 @@ export const historyStorage = {
       };
       const updated = [newItem, ...history].slice(0, MAX_HISTORY_ITEMS);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
-    } catch (error) {
-      console.error('Failed to save translation to history:', error);
+    } catch {
+      // Non-critical — localStorage write failed (quota exceeded, private mode, etc.)
     }
   },
 };

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useLayoutEffect } from 'react';
-import { AdminNav } from '@/components/admin/AdminNav';
+import { useLayoutEffect, useState } from 'react';
+
 import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { adminKeyStorage } from '@/lib/api/admin';
 
 export default function AdminLayout({

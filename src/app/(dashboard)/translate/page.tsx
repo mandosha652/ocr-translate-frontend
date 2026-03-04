@@ -1,218 +1,173 @@
 'use client';
-import { useRef, useState } from 'react';
-import { Loader2, RotateCcw, X, ImageIcon } from 'lucide-react';
+
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+
+import { QuotaBanner } from '@/components/features/upgrade/QuotaBanner';
+import { UpgradeModal } from '@/components/features/upgrade/UpgradeModal';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ImageUploader } from '@/components/features/translate/ImageUploader';
-import { LanguageSelect } from '@/components/features/translate/LanguageSelect';
-import { TranslationResult } from '@/components/features/translate/TranslationResult';
-import { useTranslateImage } from '@/hooks';
-import { EmptyState } from '@/components/ui/empty-state';
-import type { TranslateResponse } from '@/types';
-import { historyStorage } from '@/lib/utils/historyStorage';
-import { getErrorMessage } from '@/lib/utils';
+  useSubmitTranslationJob,
+  useTranslationJob,
+  useUsageStats,
+} from '@/hooks';
+import { getErrorMessage, getErrorStatus, isValidHttpUrl } from '@/lib/utils';
+
+import { TranslateFormCard } from './_components/TranslateFormCard';
+import { TranslateResultPanel } from './_components/TranslateResultPanel';
+
+type PageState = 'idle' | 'submitting' | 'polling' | 'done' | 'error';
+type InputMode = 'upload' | 'url';
 
 export default function TranslatePage() {
+  const [inputMode, setInputMode] = useState<InputMode>('upload');
   const [file, setFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
   const [targetLang, setTargetLang] = useState('en');
   const [sourceLang, setSourceLang] = useState('auto');
-  const [excludeText, setExcludeText] = useState('');
-  const [result, setResult] = useState<TranslateResponse | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [pageState, setPageState] = useState<PageState>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
-  const translateMutation = useTranslateImage();
+  const submitMutation = useSubmitTranslationJob();
+  const jobQuery = useTranslationJob(jobId);
+  const { data: usageStats } = useUsageStats();
+
+  const jobStatus = jobQuery.data?.status;
+  const outputUrl = jobQuery.data?.output_url ?? null;
+
+  useEffect(() => {
+    if (pageState !== 'polling') return;
+    if (jobStatus === 'completed' && outputUrl) {
+      setPageState('done');
+    } else if (jobStatus === 'failed') {
+      setPageState('error');
+      setErrorMessage(jobQuery.data?.error ?? 'Translation failed');
+    }
+  }, [pageState, jobStatus, outputUrl, jobQuery.data?.error]);
+
+  const isBusy = pageState === 'submitting' || pageState === 'polling';
+
+  const canSubmit =
+    !isBusy &&
+    (inputMode === 'upload' ? !!file : isValidHttpUrl(imageUrl.trim()));
+
+  const hasInput = inputMode === 'upload' ? !!file : !!imageUrl.trim();
 
   const handleTranslate = async () => {
-    if (!file) {
-      toast.error('Please select an image');
+    const input =
+      inputMode === 'upload'
+        ? file
+          ? { file }
+          : null
+        : isValidHttpUrl(imageUrl.trim())
+          ? { imageUrl: imageUrl.trim() }
+          : null;
+
+    if (!input) {
+      toast.error(
+        inputMode === 'upload'
+          ? 'Select an image to translate'
+          : 'Enter a valid image URL starting with https://'
+      );
       return;
     }
 
-    abortControllerRef.current = new AbortController();
+    setPageState('submitting');
+    setErrorMessage(null);
+    setJobId(null);
 
     try {
-      const response = await translateMutation.mutateAsync({
-        file,
-        targetLang,
-        signal: abortControllerRef.current.signal,
+      const job = await submitMutation.mutateAsync({
+        input,
+        targetLanguage: targetLang,
         options: {
-          sourceLang: sourceLang !== 'auto' ? sourceLang : undefined,
-          excludeText: excludeText || undefined,
+          sourceLanguage: sourceLang !== 'auto' ? sourceLang : undefined,
         },
       });
-      setResult(response);
-      historyStorage.addSingleTranslation(response, targetLang);
-      toast.success('Translation complete');
+      setJobId(job.id);
+      setPageState('polling');
     } catch (error) {
-      toast.error(getErrorMessage(error, 'Translation failed'));
+      const status = getErrorStatus(error);
+      if (status === 402 || status === 429) {
+        setPageState('idle');
+        setUpgradeOpen(true);
+        return;
+      }
+      const msg = getErrorMessage(
+        error,
+        "Couldn't start the translation — please try again"
+      );
+      setPageState('error');
+      setErrorMessage(msg);
+      toast.error(msg);
     }
   };
 
   const handleReset = () => {
-    abortControllerRef.current?.abort();
     setFile(null);
-    setResult(null);
+    setImageUrl('');
+    setJobId(null);
+    setPageState('idle');
+    setErrorMessage(null);
     setTargetLang('en');
     setSourceLang('auto');
-    setExcludeText('');
+    submitMutation.reset();
+  };
+
+  const handleCancel = () => {
+    setPageState('idle');
+    setJobId(null);
+    submitMutation.reset();
   };
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        reason="You've reached your monthly translation limit. Upgrade to Pro for more."
+      />
+      {usageStats?.quota && <QuotaBanner quota={usageStats.quota} />}
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Translate Image</h1>
         <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-          Upload an image — get back a new image with the text translated in
-          place
+          Upload an image or paste a URL — get back a new image with the text
+          translated in place
         </p>
       </div>
 
       <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
-        {/* Upload & Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Upload Image</CardTitle>
-            <CardDescription>
-              Select an image containing text you want to translate
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <ImageUploader
-              onFileSelect={setFile}
-              selectedFile={file}
-              disabled={translateMutation.isPending}
-            />
+        <TranslateFormCard
+          inputMode={inputMode}
+          onInputModeChange={setInputMode}
+          file={file}
+          onFileSelect={setFile}
+          imageUrl={imageUrl}
+          onImageUrlChange={setImageUrl}
+          targetLang={targetLang}
+          onTargetLangChange={setTargetLang}
+          sourceLang={sourceLang}
+          onSourceLangChange={setSourceLang}
+          pageState={pageState}
+          isBusy={isBusy}
+          hasInput={hasInput}
+          canSubmit={canSubmit}
+          onTranslate={handleTranslate}
+          onCancel={handleCancel}
+          onReset={handleReset}
+        />
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <LanguageSelect
-                value={sourceLang}
-                onChange={setSourceLang}
-                label="Source Language"
-                placeholder="Auto-detect"
-                showAuto
-                disabled={translateMutation.isPending}
-              />
-              <LanguageSelect
-                value={targetLang}
-                onChange={setTargetLang}
-                label="Target Language"
-                disabled={translateMutation.isPending}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="excludeText">Exclude Text (optional)</Label>
-              <Input
-                id="excludeText"
-                placeholder="e.g., BRAND,@handle,Logo"
-                value={excludeText}
-                onChange={e => setExcludeText(e.target.value)}
-                disabled={translateMutation.isPending}
-              />
-              <p className="text-muted-foreground text-xs">
-                Comma-separated exact strings to keep untranslated — e.g.{' '}
-                <code className="bg-muted rounded px-1">Nike,@brand,©2024</code>
-              </p>
-              {excludeText.trim() &&
-                (() => {
-                  const entries = excludeText
-                    .split(',')
-                    .map(s => s.trim())
-                    .filter(Boolean);
-                  const hasEmpty = excludeText.includes(',,');
-                  const hasTooLong = entries.some(e => e.length > 50);
-                  if (hasEmpty)
-                    return (
-                      <p className="text-xs text-amber-600">
-                        Remove consecutive commas — empty entries are ignored
-                      </p>
-                    );
-                  if (hasTooLong)
-                    return (
-                      <p className="text-xs text-amber-600">
-                        Some entries are very long — only exact matches work
-                      </p>
-                    );
-                  return (
-                    <p className="text-muted-foreground text-xs">
-                      {entries.length} entr{entries.length === 1 ? 'y' : 'ies'}{' '}
-                      will be excluded
-                    </p>
-                  );
-                })()}
-            </div>
-
-            <div className="flex gap-3">
-              <Button
-                onClick={handleTranslate}
-                disabled={!file || translateMutation.isPending}
-                className="flex-1"
-              >
-                {translateMutation.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                {translateMutation.isPending ? 'Translating...' : 'Translate'}
-              </Button>
-              {translateMutation.isPending && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    abortControllerRef.current?.abort();
-                    translateMutation.reset();
-                  }}
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Cancel
-                </Button>
-              )}
-              {(file || result) && !translateMutation.isPending && (
-                <Button variant="outline" onClick={handleReset}>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  New
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Result */}
-        <div>
-          {translateMutation.isPending && (
-            <Card className="animate-in fade-in-0 duration-300">
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <div className="relative">
-                  <div className="bg-primary/10 absolute inset-0 animate-ping rounded-full" />
-                  <Loader2 className="text-primary relative h-10 w-10 animate-spin" />
-                </div>
-                <p className="mt-6 font-medium">Processing your image...</p>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Detecting text, translating, and rendering back onto the image
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {result && !translateMutation.isPending && (
-            <TranslationResult result={result} />
-          )}
-
-          {!result && !translateMutation.isPending && (
-            <EmptyState
-              icon={ImageIcon}
-              title="Your translated image will appear here"
-              description="You'll get the translated image, the original with text removed, and a region-by-region breakdown"
-            />
-          )}
-        </div>
+        <TranslateResultPanel
+          pageState={pageState}
+          inputMode={inputMode}
+          jobStatus={jobStatus}
+          outputUrl={outputUrl}
+          targetLang={targetLang}
+          errorMessage={errorMessage}
+          hasInput={hasInput}
+          onReset={handleReset}
+        />
       </div>
     </div>
   );

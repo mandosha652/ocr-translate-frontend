@@ -1,40 +1,20 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Clock,
-  Layers,
-  ArrowRight,
-  Search,
-  X,
-  XCircle,
-  Download,
-} from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useListBatches, useTranslationHistory } from '@/hooks';
+import { XCircle } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import { getLangName } from '@/components/features/history/utils';
-import { SingleCard } from '@/components/features/history/SingleCard';
-import { BatchCard } from '@/components/features/history/BatchCard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTranslationHistory } from '@/hooks';
+import { downloadHistoryJSON } from '@/lib/utils/blob';
+
+import { BatchHistoryTab } from './_components/BatchHistoryTab';
+import { HistoryEmptyState } from './_components/HistoryEmptyState';
+import { HistoryPageHeader } from './_components/HistoryPageHeader';
+import { HistorySearch } from './_components/HistorySearch';
+import { SingleHistoryTab } from './_components/SingleHistoryTab';
 
 const ITEMS_PER_PAGE = 20;
-
-function CardSkeleton() {
-  return (
-    <div className="flex items-center gap-3 rounded-xl border p-4">
-      <Skeleton className="h-12 w-12 shrink-0 rounded-lg" />
-      <div className="flex-1 space-y-2">
-        <Skeleton className="h-4 w-40" />
-        <Skeleton className="h-3 w-24" />
-      </div>
-    </div>
-  );
-}
 
 export default function HistoryPage() {
   const [page, setPage] = useState(1);
@@ -93,24 +73,8 @@ export default function HistoryPage() {
   );
   const isLoading = isSingleLoading || isBatchesLoading;
 
-  const handleExportJSON = () => {
-    const payload = {
-      exported_at: new Date().toISOString(),
-      single_translations: singleHistory?.items ?? [],
-      batches: finishedBatches,
-    };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-      type: 'application/json',
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `translation-history-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const handleExportJSON = () =>
+    downloadHistoryJSON(singleHistory?.items ?? [], finishedBatches);
 
   const isEmpty =
     !isLoading &&
@@ -120,27 +84,16 @@ export default function HistoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold sm:text-3xl">History</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            All your past translations
-          </p>
-        </div>
-        {!isEmpty && !isLoading && (
-          <Button variant="outline" size="sm" onClick={handleExportJSON}>
-            <Download className="mr-2 h-3.5 w-3.5" />
-            Export JSON
-          </Button>
-        )}
-      </div>
+      <HistoryPageHeader
+        isEmpty={isEmpty}
+        isLoading={isLoading}
+        onExportJSON={handleExportJSON}
+      />
 
-      {/* Error */}
       {isSingleError && (
         <div className="border-destructive/30 bg-destructive/5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm">
           <XCircle className="text-destructive h-4 w-4 shrink-0" />
-          <span>Failed to load translations.</span>
+          <span>Couldn&apos;t load your history — try refreshing</span>
           <button
             onClick={() => refetchSingle()}
             className="text-muted-foreground hover:text-foreground ml-auto cursor-pointer text-xs underline-offset-2 hover:underline"
@@ -150,29 +103,7 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Empty */}
-      {isEmpty && (
-        <EmptyState
-          icon={Clock}
-          title="No translations yet"
-          description="Your history will appear here after your first translation"
-          size="lg"
-          actions={
-            <>
-              <Link href="/translate">
-                <Button size="sm">
-                  Single image <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-                </Button>
-              </Link>
-              <Link href="/batch">
-                <Button size="sm" variant="outline">
-                  Batch <Layers className="ml-1.5 h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </>
-          }
-        />
-      )}
+      {isEmpty && <HistoryEmptyState />}
 
       {!isEmpty && (
         <Tabs
@@ -180,7 +111,6 @@ export default function HistoryPage() {
           className="space-y-5"
           onValueChange={setActiveTab}
         >
-          {/* Tabs + search row */}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <TabsList>
               <TabsTrigger value="single">
@@ -200,135 +130,32 @@ export default function HistoryPage() {
                 )}
               </TabsTrigger>
             </TabsList>
-
-            {/* Search */}
-            <div className="relative w-full sm:w-56">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
-              <Input
-                placeholder="Search by language…"
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="h-9 pr-8 pl-8 text-sm"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  title="Clear"
-                  className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 absolute top-1/2 right-2.5 -translate-y-1/2 cursor-pointer rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
-            </div>
+            <HistorySearch value={searchQuery} onChange={setSearchQuery} />
           </div>
 
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.15, ease: 'easeInOut' }}
-            >
-              {/* ── Single tab ── */}
-              <TabsContent value="single" className="mt-0 space-y-3">
-                {isSingleLoading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <CardSkeleton key={i} />
-                  ))
-                ) : filteredSingles.length === 0 ? (
-                  <EmptyState
-                    title={
-                      searchQuery
-                        ? 'No results match your search'
-                        : 'No single translations yet'
-                    }
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      {filteredSingles.map(item => (
-                        <SingleCard key={item.id} item={item} />
-                      ))}
-                    </div>
+          <div className="animate-in fade-in-0 duration-150" key={activeTab}>
+            <TabsContent value="single" className="mt-0 space-y-3">
+              <SingleHistoryTab
+                items={filteredSingles}
+                isLoading={isSingleLoading}
+                searchQuery={searchQuery}
+                page={page}
+                totalPages={totalSinglePages}
+                onPageChange={setPage}
+              />
+            </TabsContent>
 
-                    {/* Pagination */}
-                    {totalSinglePages > 1 && (
-                      <div className="flex items-center justify-center gap-3 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={page <= 1}
-                          onClick={() => setPage(p => p - 1)}
-                        >
-                          Previous
-                        </Button>
-                        <span className="text-muted-foreground text-sm">
-                          {page} / {totalSinglePages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={page >= totalSinglePages}
-                          onClick={() => setPage(p => p + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </TabsContent>
-
-              {/* ── Batch tab ── */}
-              <TabsContent value="batch" className="mt-0 space-y-3">
-                {isBatchesLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <CardSkeleton key={i} />
-                  ))
-                ) : filteredBatches.length === 0 ? (
-                  <EmptyState
-                    title={
-                      searchQuery
-                        ? 'No results match your search'
-                        : 'No batch translations yet'
-                    }
-                  />
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      {paginatedBatches.map(batch => (
-                        <BatchCard key={batch.batch_id} batch={batch} />
-                      ))}
-                    </div>
-                    {totalBatchPages > 1 && (
-                      <div className="flex items-center justify-center gap-3 pt-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={batchPage <= 1}
-                          onClick={() => setBatchPage(p => p - 1)}
-                        >
-                          Previous
-                        </Button>
-                        <span className="text-muted-foreground text-sm">
-                          {batchPage} / {totalBatchPages}
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={batchPage >= totalBatchPages}
-                          onClick={() => setBatchPage(p => p + 1)}
-                        >
-                          Next
-                        </Button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </TabsContent>
-            </motion.div>
-          </AnimatePresence>
+            <TabsContent value="batch" className="mt-0 space-y-3">
+              <BatchHistoryTab
+                batches={paginatedBatches}
+                isLoading={isBatchesLoading}
+                searchQuery={searchQuery}
+                page={batchPage}
+                totalPages={totalBatchPages}
+                onPageChange={setBatchPage}
+              />
+            </TabsContent>
+          </div>
         </Tabs>
       )}
     </div>

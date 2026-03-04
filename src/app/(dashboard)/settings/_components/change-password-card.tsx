@@ -1,9 +1,13 @@
 'use client';
 
-import { Lock, Loader2 } from 'lucide-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
+import { Loader2, Lock } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -11,28 +15,81 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { PasswordInput } from '@/components/ui/PasswordInput';
+import { useAuth, useChangePassword } from '@/hooks';
+import { tokenStorage } from '@/lib/api';
+import { getErrorMessage } from '@/lib/utils';
+import {
+  type ChangePasswordFormData,
+  changePasswordSchema,
+} from '@/lib/validators';
 
-interface ChangePasswordCardProps {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-  isPending: boolean;
-  onCurrentPasswordChange: (v: string) => void;
-  onNewPasswordChange: (v: string) => void;
-  onConfirmPasswordChange: (v: string) => void;
-  onSubmit: () => void;
+function PasswordField({
+  id,
+  label,
+  autoComplete,
+  disabled,
+  error,
+  register,
+}: {
+  id: string;
+  label: string;
+  autoComplete: string;
+  disabled: boolean;
+  error?: string;
+  register: UseFormRegisterReturn;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <PasswordInput
+        id={id}
+        autoComplete={autoComplete}
+        disabled={disabled}
+        {...register}
+      />
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
-export function ChangePasswordCard({
-  currentPassword,
-  newPassword,
-  confirmPassword,
-  isPending,
-  onCurrentPasswordChange,
-  onNewPasswordChange,
-  onConfirmPasswordChange,
-  onSubmit,
-}: ChangePasswordCardProps) {
+export function ChangePasswordCard() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { logout } = useAuth();
+  const changePassword = useChangePassword();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+  });
+
+  const onSubmit = async (data: ChangePasswordFormData) => {
+    try {
+      await changePassword.mutateAsync({
+        current_password: data.currentPassword,
+        new_password: data.newPassword,
+      });
+      toast.success('Password changed — please log in again');
+      tokenStorage.clearTokens();
+      queryClient.clear();
+      logout();
+      router.push('/login');
+    } catch (err: unknown) {
+      toast.error(
+        getErrorMessage(err, "Couldn't update your password — please try again")
+      );
+    }
+  };
+
   return (
     <Card id="password">
       <CardHeader>
@@ -47,53 +104,38 @@ export function ChangePasswordCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="max-w-sm space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="currentPassword">Current password</Label>
-            <Input
-              id="currentPassword"
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={e => onCurrentPasswordChange(e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">New password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={e => onNewPasswordChange(e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={e => onConfirmPasswordChange(e.target.value)}
-              disabled={isPending}
-              onKeyDown={e => {
-                if (e.key === 'Enter') onSubmit();
-              }}
-            />
-          </div>
-          <Button
-            onClick={onSubmit}
-            disabled={
-              isPending || !currentPassword || !newPassword || !confirmPassword
-            }
-          >
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm space-y-4">
+          <PasswordField
+            id="currentPassword"
+            label="Current password"
+            autoComplete="current-password"
+            disabled={changePassword.isPending}
+            error={errors.currentPassword?.message}
+            register={register('currentPassword')}
+          />
+          <PasswordField
+            id="newPassword"
+            label="New password"
+            autoComplete="new-password"
+            disabled={changePassword.isPending}
+            error={errors.newPassword?.message}
+            register={register('newPassword')}
+          />
+          <PasswordField
+            id="confirmPassword"
+            label="Confirm new password"
+            autoComplete="new-password"
+            disabled={changePassword.isPending}
+            error={errors.confirmPassword?.message}
+            register={register('confirmPassword')}
+          />
+          <Button type="submit" disabled={changePassword.isPending}>
+            {changePassword.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
             Update password
           </Button>
-        </div>
+        </form>
       </CardContent>
     </Card>
   );

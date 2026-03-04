@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
+
 import { DashboardNav } from '@/components/layout/DashboardNav';
-import { VerificationBanner } from '@/components/layout/VerificationBanner';
-import { OfflineBanner } from '@/components/layout/OfflineBanner';
 import { DevBypassBanner } from '@/components/layout/DevBypassBanner';
+import { OfflineBanner } from '@/components/layout/OfflineBanner';
+import { VerificationBanner } from '@/components/layout/VerificationBanner';
 
 export const metadata: Metadata = {
   robots: {

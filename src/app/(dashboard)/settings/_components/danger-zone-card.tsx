@@ -1,6 +1,11 @@
 'use client';
 
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { AlertTriangle, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,20 +23,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useAuth } from '@/hooks';
+import { authApi, tokenStorage } from '@/lib/api';
 
-interface DangerZoneCardProps {
-  deleteAccountOpen: boolean;
-  onDeleteAccountOpenChange: (open: boolean) => void;
-  onDeleteAccount: () => void;
-  isPending: boolean;
-}
+export function DangerZoneCard() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { logout } = useAuth();
+  const [open, setOpen] = useState(false);
 
-export function DangerZoneCard({
-  deleteAccountOpen,
-  onDeleteAccountOpenChange,
-  onDeleteAccount,
-  isPending,
-}: DangerZoneCardProps) {
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => authApi.deleteAccount(),
+    onSuccess: () => {
+      tokenStorage.clearTokens();
+      queryClient.clear();
+      logout();
+      router.push('/login');
+      toast.success('Account deleted');
+    },
+    onError: () => {
+      toast.error("Couldn't delete your account — please try again");
+    },
+  });
+
   return (
     <Card id="danger-zone" className="border-destructive/40">
       <CardHeader>
@@ -48,10 +62,7 @@ export function DangerZoneCard({
               Permanently delete your account and all associated data
             </p>
           </div>
-          <Dialog
-            open={deleteAccountOpen}
-            onOpenChange={onDeleteAccountOpenChange}
-          >
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm">
                 Delete Account
@@ -69,18 +80,15 @@ export function DangerZoneCard({
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => onDeleteAccountOpenChange(false)}
-                >
+                <Button variant="outline" onClick={() => setOpen(false)}>
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={onDeleteAccount}
-                  disabled={isPending}
+                  onClick={() => deleteAccountMutation.mutate()}
+                  disabled={deleteAccountMutation.isPending}
                 >
-                  {isPending && (
+                  {deleteAccountMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
                   Delete My Account

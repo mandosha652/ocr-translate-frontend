@@ -1,10 +1,11 @@
 'use client';
 
-import { Loader2, Pencil } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { Pencil } from 'lucide-react';
+import { useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -12,9 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { User } from '@/types';
+
+import { EditProfileForm } from './EditProfileForm';
 
 function AccountSkeleton() {
   return (
@@ -46,30 +49,11 @@ function AccountSkeleton() {
 interface AccountInfoCardProps {
   user: User | null | undefined;
   isLoadingUser: boolean;
-  isEditingProfile: boolean;
-  profileName: string;
-  profileEmail: string;
-  isPending: boolean;
-  onStartEdit: () => void;
-  onCancelEdit: () => void;
-  onSave: () => void;
-  onNameChange: (v: string) => void;
-  onEmailChange: (v: string) => void;
 }
 
-export function AccountInfoCard({
-  user,
-  isLoadingUser,
-  isEditingProfile,
-  profileName,
-  profileEmail,
-  isPending,
-  onStartEdit,
-  onCancelEdit,
-  onSave,
-  onNameChange,
-  onEmailChange,
-}: AccountInfoCardProps) {
+export function AccountInfoCard({ user, isLoadingUser }: AccountInfoCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+
   return (
     <Card id="account">
       <CardHeader>
@@ -78,8 +62,12 @@ export function AccountInfoCard({
             <CardTitle>Account Information</CardTitle>
             <CardDescription>Your account details</CardDescription>
           </div>
-          {!isLoadingUser && !isEditingProfile && (
-            <Button variant="outline" size="sm" onClick={onStartEdit}>
+          {!isLoadingUser && !isEditing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+            >
               <Pencil className="mr-2 h-3.5 w-3.5" />
               Edit
             </Button>
@@ -91,43 +79,25 @@ export function AccountInfoCard({
           <AccountSkeleton />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="profileEmail">Email</Label>
-                <Input
-                  id="profileEmail"
-                  value={isEditingProfile ? profileEmail : (user?.email ?? '')}
-                  disabled={!isEditingProfile || isPending}
-                  onChange={e => onEmailChange(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="profileName">Name</Label>
-                <Input
-                  id="profileName"
-                  value={isEditingProfile ? profileName : (user?.name ?? '')}
-                  disabled={!isEditingProfile || isPending}
-                  onChange={e => onNameChange(e.target.value)}
-                />
-              </div>
-            </div>
-            {isEditingProfile && (
-              <div className="flex gap-2">
-                <Button size="sm" onClick={onSave} disabled={isPending}>
-                  {isPending && (
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  )}
-                  Save
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onCancelEdit}
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-              </div>
+            {isEditing ? (
+              <EditProfileForm
+                user={user}
+                onSaveComplete={() => setIsEditing(false)}
+                onCancel={() => setIsEditing(false)}
+              />
+            ) : (
+              <>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <p className="text-sm">{user?.email}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Name</Label>
+                    <p className="text-sm">{user?.name}</p>
+                  </div>
+                </div>
+              </>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

@@ -1,14 +1,13 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Card,
   CardContent,
@@ -17,12 +16,39 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  forgotPasswordSchema,
-  type ForgotPasswordFormData,
-} from '@/lib/validators';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { authApi } from '@/lib/api/auth';
-import { AxiosError } from 'axios';
+import { getErrorMessage } from '@/lib/utils';
+import {
+  type ForgotPasswordFormData,
+  forgotPasswordSchema,
+} from '@/lib/validators';
+
+function SubmissionSuccess() {
+  return (
+    <Card className="mx-4 w-full max-w-md sm:mx-0">
+      <CardContent className="flex flex-col items-center gap-4 px-4 py-10 sm:px-6">
+        <div className="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-full">
+          <Mail className="text-primary h-7 w-7" />
+        </div>
+        <div className="space-y-1 text-center">
+          <h2 className="text-lg font-semibold sm:text-xl">Check your inbox</h2>
+          <p className="text-muted-foreground text-sm">
+            If that email is registered, you&apos;ll receive a password reset
+            link shortly.
+          </p>
+        </div>
+        <Link
+          href="/login"
+          className="text-primary focus-visible:ring-ring/50 rounded text-sm hover:underline focus-visible:ring-2 focus-visible:outline-none"
+        >
+          Back to sign in
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
 
 function ForgotPasswordForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -42,10 +68,8 @@ function ForgotPasswordForm() {
       await authApi.forgotPassword({ email: data.email });
       setSubmitted(true);
     } catch (error) {
-      const axiosError = error as AxiosError<{ detail: string }>;
       toast.error(
-        axiosError.response?.data?.detail ||
-          'Something went wrong. Please try again.'
+        getErrorMessage(error, 'Something went wrong — please try again')
       );
     } finally {
       setIsLoading(false);
@@ -53,30 +77,7 @@ function ForgotPasswordForm() {
   };
 
   if (submitted) {
-    return (
-      <Card className="mx-4 w-full max-w-md sm:mx-0">
-        <CardContent className="flex flex-col items-center gap-4 px-4 py-10 sm:px-6">
-          <div className="bg-primary/10 flex h-14 w-14 items-center justify-center rounded-full">
-            <Mail className="text-primary h-7 w-7" />
-          </div>
-          <div className="space-y-1 text-center">
-            <h2 className="text-lg font-semibold sm:text-xl">
-              Check your inbox
-            </h2>
-            <p className="text-muted-foreground text-sm">
-              If that email is registered, you&apos;ll receive a password reset
-              link shortly.
-            </p>
-          </div>
-          <Link
-            href="/login"
-            className="text-primary focus-visible:ring-ring/50 rounded text-sm hover:underline focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Back to sign in
-          </Link>
-        </CardContent>
-      </Card>
-    );
+    return <SubmissionSuccess />;
   }
 
   return (
@@ -102,7 +103,7 @@ function ForgotPasswordForm() {
                 {...register('email')}
               />
               {errors.email && (
-                <p className="text-destructive text-sm">
+                <p className="text-destructive text-sm" role="alert">
                   {errors.email.message}
                 </p>
               )}

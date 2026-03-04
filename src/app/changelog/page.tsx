@@ -1,5 +1,6 @@
+import { ArrowLeft, Languages } from 'lucide-react';
 import Link from 'next/link';
-import { Languages, ArrowLeft } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 

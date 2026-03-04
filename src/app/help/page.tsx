@@ -1,14 +1,11 @@
+import { ArrowLeft, BookOpen, Languages } from 'lucide-react';
 import Link from 'next/link';
-import { Languages, ArrowLeft, Mail, BookOpen } from 'lucide-react';
+
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { FaqAccordion } from '@/components/features/help/FaqAccordion';
+
+import { ContactSection } from './_components/ContactSection';
+import { HelpSection } from './_components/HelpSection';
+import { QuickLinks } from './_components/QuickLinks';
 
 export const metadata = {
   title: 'Help & FAQ',
@@ -90,7 +87,9 @@ export default function HelpPage() {
     <div className="flex min-h-screen flex-col">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c'),
+        }}
       />
       <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -119,57 +118,9 @@ export default function HelpPage() {
             </p>
           </div>
 
-          {/* Quick links */}
-          <div className="mb-10 grid gap-4 sm:grid-cols-2">
-            <Link href="/api-docs">
-              <Card className="hover:border-primary/50 cursor-pointer transition-colors">
-                <CardHeader>
-                  <CardTitle className="text-base">API Reference</CardTitle>
-                  <CardDescription>
-                    Integrate ImgText into your pipeline
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-            <Link href="/settings">
-              <Card className="hover:border-primary/50 cursor-pointer transition-colors">
-                <CardHeader>
-                  <CardTitle className="text-base">API Keys</CardTitle>
-                  <CardDescription>
-                    Create and manage API keys for programmatic access
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            </Link>
-          </div>
-
-          {/* FAQ */}
-          <section className="mb-12 space-y-4">
-            <h2 className="text-xl font-semibold">
-              Frequently Asked Questions
-            </h2>
-            <FaqAccordion faqs={faqs} />
-          </section>
-
-          {/* Contact */}
-          <section>
-            <Card className="border-dashed">
-              <CardContent className="flex flex-col items-center py-10 text-center">
-                <Mail className="text-muted-foreground mb-3 h-8 w-8" />
-                <h2 className="text-lg font-semibold">Still need help?</h2>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  Can&apos;t find what you&apos;re looking for? Send us an email
-                  and we&apos;ll get back to you.
-                </p>
-                <a href="mailto:support@imgtext.io" className="mt-4">
-                  <Button className="gap-2">
-                    <Mail className="h-4 w-4" />
-                    support@imgtext.io
-                  </Button>
-                </a>
-              </CardContent>
-            </Card>
-          </section>
+          <QuickLinks />
+          <HelpSection faqs={faqs} />
+          <ContactSection />
         </div>
       </main>
 

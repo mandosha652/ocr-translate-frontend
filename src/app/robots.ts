@@ -15,14 +15,25 @@ export default function robots(): MetadataRoute.Robots {
           '/privacy',
           '/changelog',
           '/api-docs',
+          '/case-studies',
         ],
         disallow: [
+          // Protected dashboard routes (user auth required)
           '/dashboard',
           '/translate',
           '/batch',
           '/history',
           '/settings',
+          // Admin routes (internal only, admin key required)
           '/admin',
+          // Virtual Assistant / Operations routes (internal only, secret slug required)
+          '/ops',
+          // Authentication routes
+          '/login',
+          '/signup',
+          '/forgot-password',
+          '/reset-password',
+          '/verify-email',
         ],
       },
     ],

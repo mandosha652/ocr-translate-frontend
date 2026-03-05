@@ -6,6 +6,10 @@ import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { adminKeyStorage } from '@/lib/api/admin';
 
+// Note: Metadata export won't work in 'use client' components
+// Admin pages are protected by robots.txt and middleware
+// SEO: Never indexed (disallowed in robots.txt, protected by admin key)
+
 export default function AdminLayout({
   children,
 }: {

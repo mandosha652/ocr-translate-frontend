@@ -1,6 +1,5 @@
 import {
   type Browser,
-  type BrowserContext,
   expect,
   type Page,
 } from '@playwright/test';
@@ -66,24 +65,6 @@ export async function logIn(
 }
 
 /**
- * Sign up a brand-new user using a dedicated browser context.
- * Useful in beforeAll hooks where `page` is not available.
- */
-export async function signUpOnce(
-  browser: Browser,
-  email: string,
-  password = TEST_PASSWORD
-): Promise<void> {
-  const context = await browser.newContext();
-  const page = await context.newPage();
-  try {
-    await signUp(page, email, password);
-  } finally {
-    await context.close();
-  }
-}
-
-/**
  * Sign up once and save the authenticated browser state (cookies) to a file.
  * Subsequent tests can load this file as `storageState` to skip login entirely.
  *
@@ -120,17 +101,3 @@ export async function signUpAndSaveState(
   return stateFile;
 }
 
-/**
- * Restore a saved auth state into an existing context's page.
- * Faster than logIn() — no network round-trip needed.
- */
-export async function restoreState(
-  context: BrowserContext,
-  stateFile: string
-): Promise<void> {
-  const raw = fs.readFileSync(stateFile, 'utf-8');
-  const state = JSON.parse(raw) as {
-    cookies: Parameters<BrowserContext['addCookies']>[0];
-  };
-  await context.addCookies(state.cookies);
-}

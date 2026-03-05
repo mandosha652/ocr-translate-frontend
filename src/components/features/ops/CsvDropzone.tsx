@@ -1,6 +1,6 @@
 'use client';
 
-import { Upload } from 'lucide-react';
+import { FileCheck, FileSpreadsheet } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 
@@ -38,28 +38,38 @@ export function CsvDropzone({ onFile, disabled }: CsvDropzoneProps) {
       <div
         {...getRootProps()}
         className={cn(
-          'cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition-colors select-none',
+          'cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors select-none',
           isDragActive
             ? 'border-primary bg-primary/5'
-            : 'border-muted-foreground/30 hover:border-primary/50',
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30',
           disabled && 'cursor-not-allowed opacity-50'
         )}
       >
         <input {...getInputProps()} />
-        <Upload className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
         {filename ? (
-          <p className="text-sm font-medium">{filename}</p>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-500/10">
+              <FileCheck className="h-5 w-5 text-green-600" />
+            </div>
+            <p className="text-sm font-medium">{filename}</p>
+            <p className="text-muted-foreground text-xs">
+              Click or drop to replace
+            </p>
+          </div>
         ) : (
-          <>
+          <div className="flex flex-col items-center gap-2">
+            <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
+              <FileSpreadsheet className="text-muted-foreground h-5 w-5" />
+            </div>
             <p className="text-sm font-medium">
               {isDragActive
                 ? 'Drop CSV here'
                 : 'Drop CSV here or click to browse'}
             </p>
-            <p className="text-muted-foreground mt-1 text-xs">
-              Required columns: image_url, caption, source_lang, target_langs
+            <p className="text-muted-foreground text-xs">
+              Columns: image_url, caption, source_lang, target_langs
             </p>
-          </>
+          </div>
         )}
       </div>
       {fileRejections.length > 0 && (

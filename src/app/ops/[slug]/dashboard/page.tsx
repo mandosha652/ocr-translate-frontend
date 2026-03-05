@@ -1,6 +1,6 @@
 'use client';
 
-import { Loader2, UploadCloud } from 'lucide-react';
+import { FileSpreadsheet, Inbox, Loader2, UploadCloud } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
@@ -10,7 +10,14 @@ import { CsvDropzone } from '@/components/features/ops/CsvDropzone';
 import { DownloadResultsCard } from '@/components/features/ops/DownloadResultsCard';
 import { RecentBatchesList } from '@/components/features/ops/RecentBatchesList';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   useTeamBatches,
   useTeamBatchStatus,
@@ -49,83 +56,100 @@ export default function TeamDashboardPage({
     });
   };
 
-  const rightPanel = (
-    <div className="text-muted-foreground flex flex-col items-center justify-center rounded-lg border border-dashed p-10 text-center">
-      <UploadCloud className="mb-3 h-8 w-8" />
-      <p className="text-sm">Upload a CSV to see results here</p>
-      <p className="mt-1 text-xs">
-        Select a batch from the list to view its status
-      </p>
-    </div>
-  );
-
   const batchIsDone =
     activeBatch &&
     ['completed', 'partially_completed'].includes(activeBatch.status) &&
     activeBatch.captions_status === 'completed';
 
   return (
-    <div className="bg-muted/20 min-h-screen p-6">
-      <div className="mx-auto max-w-5xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Team Dashboard</h1>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Left column: upload + history */}
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Upload CSV</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <CsvDropzone onFile={setSelectedFile} disabled={uploading} />
-                <Button
-                  className="w-full"
-                  disabled={!selectedFile || uploading}
-                  onClick={handleUpload}
-                >
-                  {uploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing…
-                    </>
-                  ) : (
-                    'Submit'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Recent Batches</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingBatches ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="text-muted-foreground h-5 w-5 animate-spin" />
-                  </div>
-                ) : (
-                  <RecentBatchesList
-                    batches={batchList?.batches ?? []}
-                    onSelect={setActiveBatchId}
-                    selectedId={activeBatchId}
-                  />
-                )}
-              </CardContent>
-            </Card>
+    <div className="min-h-screen">
+      <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
+        <div className="space-y-6 sm:space-y-8">
+          <div>
+            <h1 className="text-2xl font-bold sm:text-3xl">
+              Operations Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+              Upload CSV files to batch-translate images and captions
+            </p>
           </div>
 
-          {/* Right column: active job status + download */}
-          <div className="space-y-4">
-            {activeBatch && !batchIsDone && (
-              <BatchStatusCard batch={activeBatch} />
-            )}
-            {activeBatch && batchIsDone && (
-              <DownloadResultsCard batch={activeBatch} />
-            )}
-            {!activeBatch && rightPanel}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left column: upload + history */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileSpreadsheet className="h-5 w-5" />
+                    Upload CSV
+                  </CardTitle>
+                  <CardDescription>
+                    Upload a CSV with image URLs, captions, and target languages
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <CsvDropzone onFile={setSelectedFile} disabled={uploading} />
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    disabled={!selectedFile || uploading}
+                    onClick={handleUpload}
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Submit Batch
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Recent Batches</CardTitle>
+                  <CardDescription>
+                    Select a batch to view its status or download results
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {loadingBatches ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+                    </div>
+                  ) : (
+                    <RecentBatchesList
+                      batches={batchList?.batches ?? []}
+                      onSelect={setActiveBatchId}
+                      selectedId={activeBatchId}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right column: active job status + download */}
+            <div className="space-y-6">
+              {activeBatch && !batchIsDone && (
+                <BatchStatusCard batch={activeBatch} />
+              )}
+              {activeBatch && batchIsDone && (
+                <DownloadResultsCard batch={activeBatch} />
+              )}
+              {!activeBatch && (
+                <EmptyState
+                  icon={Inbox}
+                  title="No batch selected"
+                  description="Upload a CSV or select a batch from the list to see its status here"
+                  className="h-full min-h-60"
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,15 @@
 'use client';
 
+import { Clock, Languages } from 'lucide-react';
+
 import { Badge } from '@/components/ui/badge';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { TeamBatchStatus } from '@/types';
 
@@ -28,38 +37,63 @@ export function BatchStatusCard({ batch }: BatchStatusCardProps) {
 
   const captionsPct = batch.captions_status === 'completed' ? 100 : 0;
 
+  const isProcessing = ['pending', 'processing'].includes(batch.status);
+
   return (
-    <div className="space-y-4 rounded-lg border p-4">
-      <div className="flex items-center justify-between">
-        <p className="max-w-[60%] truncate text-sm font-medium">
-          {batch.batch_id}
-        </p>
-        <Badge variant={statusVariant[batch.status] ?? 'outline'}>
-          {batch.status.replace('_', ' ')}
-        </Badge>
-      </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            {isProcessing && (
+              <span className="relative flex h-2 w-2">
+                <span className="bg-primary absolute inline-flex h-full w-full animate-ping rounded-full opacity-75" />
+                <span className="bg-primary relative inline-flex h-2 w-2 rounded-full" />
+              </span>
+            )}
+            Batch Status
+          </CardTitle>
+          <Badge variant={statusVariant[batch.status] ?? 'outline'}>
+            {batch.status.replace('_', ' ')}
+          </Badge>
+        </div>
+        <CardDescription className="font-mono text-xs">
+          {batch.batch_id.slice(0, 8)}...
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Images</span>
+            <span className="font-medium">
+              {batch.completed_count} / {batch.total_images}
+            </span>
+          </div>
+          <Progress value={imagesPct} className="h-2" />
+        </div>
 
-      <div className="space-y-2">
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>Images</span>
-          <span>
-            {batch.completed_count} / {batch.total_images}
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Captions</span>
+            <span className="font-medium capitalize">
+              {batch.captions_status}
+            </span>
+          </div>
+          <Progress value={captionsPct} className="h-2" />
+        </div>
+
+        <div className="text-muted-foreground flex items-center gap-4 text-xs">
+          <span className="flex items-center gap-1.5">
+            <Languages className="h-3.5 w-3.5" />
+            {batch.target_languages.join(', ').toUpperCase()}
           </span>
+          {batch.failed_count > 0 && (
+            <span className="flex items-center gap-1.5 text-red-500">
+              <Clock className="h-3.5 w-3.5" />
+              {batch.failed_count} failed
+            </span>
+          )}
         </div>
-        <Progress value={imagesPct} className="h-2" />
-      </div>
-
-      <div className="space-y-2">
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>Captions</span>
-          <span>{batch.captions_status}</span>
-        </div>
-        <Progress value={captionsPct} className="h-2" />
-      </div>
-
-      <p className="text-muted-foreground text-xs">
-        Languages: {batch.target_languages.join(', ').toUpperCase()}
-      </p>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

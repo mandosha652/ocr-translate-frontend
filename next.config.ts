@@ -54,7 +54,7 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(nextConfig, {
-  org: 'imgtext',
+  org: 'ocr-translate',
 
   project: 'imgtext',
 

@@ -8,12 +8,13 @@ import { ThemeProvider } from './ThemeProvider';
 
 interface ProvidersProps {
   children: React.ReactNode;
+  nonce?: string;
 }
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, nonce }: ProvidersProps) {
   return (
     <QueryProvider>
-      <ThemeProvider>
+      <ThemeProvider nonce={nonce}>
         <TooltipProvider>
           {children}
           <Toaster position="top-right" richColors closeButton />

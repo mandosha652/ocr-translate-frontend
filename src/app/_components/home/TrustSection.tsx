@@ -7,9 +7,20 @@ interface CounterProps {
   value: number;
   label: string;
   suffix: string;
+  displaySuffix?: string;
 }
 
-function AnimatedCounter({ value, label, suffix }: CounterProps) {
+function formatValue(value: number, displaySuffix?: string): string {
+  if (displaySuffix) return `${value}${displaySuffix}`;
+  return value.toLocaleString();
+}
+
+function AnimatedCounter({
+  value,
+  label,
+  suffix,
+  displaySuffix,
+}: CounterProps) {
   const [displayValue, setDisplayValue] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -73,7 +84,7 @@ function AnimatedCounter({ value, label, suffix }: CounterProps) {
           transition={{ duration: 0.5, delay: 0.1, type: 'spring' }}
           className="from-primary to-primary/70 bg-linear-to-r bg-clip-text text-4xl font-bold text-transparent tabular-nums md:text-5xl"
         >
-          {displayValue.toLocaleString()}
+          {formatValue(displayValue, displaySuffix)}
         </motion.span>
         <motion.span
           initial={{ opacity: 0 }}
@@ -98,8 +109,8 @@ function AnimatedCounter({ value, label, suffix }: CounterProps) {
 
 export function TrustSection() {
   const stats = [
-    { value: 1000000, label: 'Images Translated', suffix: '+' },
-    { value: 27, label: 'Languages Supported', suffix: '' },
+    { value: 1, label: 'Images Translated', suffix: '+', displaySuffix: 'M' },
+    { value: 11, label: 'Languages Supported', suffix: '' },
     { value: 99, label: 'Accuracy Rate', suffix: '%' },
     { value: 7, label: 'Processing Steps', suffix: '' },
   ];
@@ -167,6 +178,7 @@ export function TrustSection() {
                 value={stat.value}
                 label={stat.label}
                 suffix={stat.suffix}
+                displaySuffix={stat.displaySuffix}
               />
             </motion.div>
           ))}

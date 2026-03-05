@@ -48,7 +48,7 @@ const COMPARISONS: ComparisonRow[] = [
     feature: 'Multi-language support',
     manual: 'Limited',
     plugin: 'Limited',
-    imgtext: '27 languages',
+    imgtext: '11 languages',
   },
   {
     feature: 'Accuracy',
@@ -68,12 +68,6 @@ const COMPARISONS: ComparisonRow[] = [
     plugin: false,
     imgtext: true,
   },
-  {
-    feature: 'Team/VA support',
-    manual: false,
-    plugin: 'Limited',
-    imgtext: true,
-  },
 ];
 
 function ComparisonCell({
@@ -86,12 +80,12 @@ function ComparisonCell({
   if (typeof value === 'boolean') {
     return (
       <td
-        className={`flex justify-center px-6 py-4 ${highlight ? 'bg-primary/8' : ''}`}
+        className={`px-6 py-4 text-center ${highlight ? 'bg-primary/8' : ''}`}
       >
         {value ? (
-          <Check className="h-5 w-5 font-bold text-green-500" />
+          <Check className="mx-auto h-5 w-5 font-bold text-green-500" />
         ) : (
-          <X className="text-muted-foreground/50 h-5 w-5" />
+          <X className="text-muted-foreground/50 mx-auto h-5 w-5" />
         )}
       </td>
     );

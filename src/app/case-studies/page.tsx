@@ -2,17 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
-import type { Metadata } from 'next';
 import Image from 'next/image';
 
 import { HomeFooter } from '@/app/_components/home/HomeFooter';
 import { HomeHeader } from '@/app/_components/home/HomeHeader';
-
-export const metadata: Metadata = {
-  title: 'Case Studies — ImgText',
-  description:
-    'See how leading companies use ImgText to scale image translation.',
-};
 
 interface CaseStudy {
   id: string;

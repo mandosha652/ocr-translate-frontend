@@ -1,3 +1,6 @@
+export { APIShowcaseSection } from './APIShowcaseSection';
+export { BeforeAfterSection } from './BeforeAfterSection';
+export { ComparisonSection } from './ComparisonSection';
 export { CTASection } from './CTASection';
 export { DemoSection } from './DemoSection';
 export { FeaturesSection } from './FeaturesSection';
@@ -6,3 +9,5 @@ export { HomeFooter } from './HomeFooter';
 export { HomeHeader } from './HomeHeader';
 export { HowItWorksSection } from './HowItWorksSection';
 export { OutputsSection } from './OutputsSection';
+export { TestimonialsSection } from './TestimonialsSection';
+export { TrustSection } from './TrustSection';

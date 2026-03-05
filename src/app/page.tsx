@@ -1,14 +1,18 @@
 import type { Metadata } from 'next';
 
 import {
+  APIShowcaseSection,
+  BeforeAfterSection,
+  ComparisonSection,
   CTASection,
-  DemoSection,
   FeaturesSection,
   HeroSection,
   HomeFooter,
   HomeHeader,
   HowItWorksSection,
   OutputsSection,
+  TestimonialsSection,
+  TrustSection,
 } from './_components/home';
 
 export const metadata: Metadata = {
@@ -37,10 +41,14 @@ export default function HomePage() {
       <HomeHeader />
       <main className="flex-1">
         <HeroSection />
+        <TrustSection />
+        <BeforeAfterSection />
         <HowItWorksSection />
-        <OutputsSection />
-        <DemoSection />
+        <ComparisonSection />
         <FeaturesSection />
+        <TestimonialsSection />
+        <APIShowcaseSection />
+        <OutputsSection />
         <CTASection />
       </main>
       <HomeFooter />

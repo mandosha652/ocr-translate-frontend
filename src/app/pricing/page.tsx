@@ -1,6 +1,7 @@
 'use client';
 
 import { FeatureTable } from './_components/FeatureTable';
+import { PricingFAQSection } from './_components/PricingFAQSection';
 import { PricingFooter } from './_components/PricingFooter';
 import { PricingHeader } from './_components/PricingHeader';
 import { PricingHero } from './_components/PricingHero';
@@ -17,38 +18,53 @@ const FEATURES: TierFeature[] = [
   {
     label: 'Images per month',
     free: '50',
-    pro: '500',
+    pro: '2,000',
     enterprise: 'Unlimited',
   },
   {
-    label: 'Max batch size',
+    label: 'Batch size',
     free: '5 images',
-    pro: '20 images',
-    enterprise: '20 images',
+    pro: '100 images',
+    enterprise: '100 images',
   },
   { label: 'Target languages', free: '3', pro: '11', enterprise: '11' },
   { label: 'API access', free: true, pro: true, enterprise: true },
-  { label: 'Priority processing', free: false, pro: true, enterprise: true },
-  { label: 'Webhook notifications', free: false, pro: true, enterprise: true },
+  { label: 'Webhooks', free: false, pro: true, enterprise: true },
+  { label: 'Logo removal', free: false, pro: true, enterprise: true },
+  { label: 'Priority support', free: false, pro: true, enterprise: true },
+  { label: 'Custom integrations', free: false, pro: false, enterprise: true },
   { label: 'Dedicated support', free: false, pro: false, enterprise: true },
   { label: 'Custom SLA', free: false, pro: false, enterprise: true },
+  {
+    label: 'File retention',
+    free: '7 days',
+    pro: '30 days',
+    enterprise: 'Never',
+  },
 ];
 
 const TIERS = [
   {
     id: 'free',
     name: 'Free',
-    description: 'Great for individuals and small projects',
+    description: 'Perfect for trying out ImgText',
+    price: 'Free',
+    cta: 'Get started',
   },
   {
     id: 'pro',
     name: 'Pro',
     description: 'For professionals and growing teams',
+    price: '$29',
+    billingPeriod: '/month',
+    cta: 'Start free trial',
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
-    description: 'For large organizations with custom needs',
+    description: 'For organizations with custom needs',
+    price: 'Custom',
+    cta: 'Contact sales',
   },
 ];
 
@@ -56,14 +72,20 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen">
       <PricingHeader />
-      <main className="mx-auto max-w-6xl px-6 py-16">
+      <main className="mx-auto max-w-7xl px-4 py-16">
         <PricingHero />
         <TierCards tiers={TIERS} />
         <FeatureTable features={FEATURES} tiers={TIERS} />
-        <p className="text-muted-foreground mt-12 text-center text-sm">
-          All plans include access to 11 European languages, image download, and
-          API key management.
-        </p>
+
+        {/* Trust statement */}
+        <div className="border-primary/10 from-primary/5 via-primary/2 to-primary/5 mt-16 rounded-xl border bg-linear-to-r p-8 text-center">
+          <p className="text-muted-foreground">
+            All plans include access to 11 European languages, image download,
+            API key management, and our full documentation.
+          </p>
+        </div>
+
+        <PricingFAQSection />
       </main>
       <PricingFooter />
     </div>

@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/authStore';
 
 const GRADIENT =
-  'linear-gradient(135deg, oklch(0.45 0.22 260), oklch(0.55 0.2 300))';
+  'linear-gradient(135deg, oklch(0.45 0.22 260), oklch(0.55 0.20 300))';
 
 export function HomeNavActions() {
   const isDevBypass = process.env.NEXT_PUBLIC_DEV_AUTH_BYPASS === 'true';
@@ -28,7 +28,7 @@ export function HomeNavActions() {
       <Link href={authed ? '/translate' : '/signup'}>
         <Button
           size="sm"
-          className="rounded-full px-4 text-[13px] font-semibold shadow-none"
+          className="rounded-full px-5 text-[13px] font-semibold shadow-none"
           style={{ background: GRADIENT, color: 'white' }}
         >
           {authed ? 'Start Translating' : 'Get Started'}
@@ -44,11 +44,11 @@ export function HeroCTAActions() {
   const authed = isAuthenticated || isDevBypass;
 
   return (
-    <div className="flex flex-col items-center gap-3.5 sm:flex-row">
+    <div className="flex flex-col items-center gap-2.5 sm:flex-row sm:gap-3">
       <Link href={authed ? '/translate' : '/signup'}>
         <Button
           size="lg"
-          className="h-12 gap-2 rounded-full px-7 text-[15px] font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_6px_32px_rgba(0,0,0,0.2)]"
+          className="h-12 gap-2 rounded-full px-7 text-[15px] font-semibold shadow-[0_4px_24px_rgba(0,0,0,0.15)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_6px_32px_rgba(0,0,0,0.2)] active:translate-y-0.5"
           style={{ background: GRADIENT, color: 'white' }}
         >
           {authed ? 'Start Translating' : "Get Started — it's free"}{' '}
@@ -59,7 +59,7 @@ export function HeroCTAActions() {
         <Button
           size="lg"
           variant="ghost"
-          className="text-muted-foreground hover:text-foreground h-12 rounded-full px-6 text-[15px] font-medium hover:bg-transparent"
+          className="text-muted-foreground hover:text-foreground h-12 rounded-full px-6 text-[15px] font-medium underline-offset-4 hover:bg-transparent hover:underline"
         >
           {authed ? 'Dashboard' : 'Sign in'}
         </Button>
@@ -77,7 +77,7 @@ export function BottomCTAAction() {
     <Link href={authed ? '/translate' : '/signup'}>
       <Button
         size="lg"
-        className="h-[52px] gap-2 rounded-full px-8 text-[16px] font-semibold shadow-[0_4px_32px_rgba(0,0,0,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(0,0,0,0.2)]"
+        className="h-[52px] gap-2 rounded-full px-8 text-[16px] font-semibold shadow-[0_4px_32px_rgba(0,0,0,0.15)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_40px_rgba(0,0,0,0.2)] active:translate-y-0"
         style={{ background: GRADIENT, color: 'white' }}
       >
         {authed ? 'Start Translating' : "Get Started — it's free"}{' '}

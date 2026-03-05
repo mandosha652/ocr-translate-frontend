@@ -5,41 +5,75 @@ import Link from 'next/link';
 
 export function HomeFooter() {
   return (
-    <footer className="border-t">
-      <div className="container mx-auto max-w-6xl px-4 py-6 sm:py-8">
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <div className="flex items-center gap-2">
-            <Languages className="h-5 w-5" />
-            <span className="font-semibold">ImgText</span>
+    <footer className="border-border/50 bg-muted/20 border-t">
+      <div className="container mx-auto max-w-7xl px-4 py-14 md:px-6 md:py-20">
+        <div className="mb-12 grid gap-8 md:grid-cols-3 md:gap-12">
+          {/* Brand */}
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <Languages className="text-primary h-6 w-6" />
+              <span className="text-lg font-bold">ImgText</span>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              AI-powered image translation for the global web.
+            </p>
           </div>
-          <div className="text-muted-foreground flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
-            <Link
-              href="/api-docs"
-              className="hover:text-foreground focus-visible:text-foreground focus-visible:ring-ring/50 rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              API Docs
-            </Link>
-            <Link
-              href="/help"
-              className="hover:text-foreground focus-visible:text-foreground focus-visible:ring-ring/50 rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              Help &amp; FAQ
-            </Link>
-            <Link
-              href="/terms"
-              className="hover:text-foreground focus-visible:text-foreground focus-visible:ring-ring/50 rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/privacy"
-              className="hover:text-foreground focus-visible:text-foreground focus-visible:ring-ring/50 rounded transition-colors focus-visible:ring-2 focus-visible:outline-none"
-            >
-              Privacy
-            </Link>
+
+          {/* Product */}
+          <div>
+            <p className="text-foreground mb-4 font-semibold">Product</p>
+            <div className="space-y-3">
+              <Link
+                href="/pricing"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                Pricing
+              </Link>
+              <Link
+                href="/case-studies"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                Case Studies
+              </Link>
+              <Link
+                href="/api-docs"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                API Docs
+              </Link>
+            </div>
           </div>
-          <p className="text-muted-foreground text-center text-xs sm:text-sm">
-            &copy; {new Date().getFullYear()} ImgText. All rights reserved.
+
+          {/* Company */}
+          <div>
+            <p className="text-foreground mb-4 font-semibold">Company</p>
+            <div className="space-y-3">
+              <Link
+                href="/help"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                Help &amp; FAQ
+              </Link>
+              <Link
+                href="/terms"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                Terms
+              </Link>
+              <Link
+                href="/privacy"
+                className="text-muted-foreground hover:text-primary block text-sm font-medium transition-colors"
+              >
+                Privacy
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-border/50 border-t pt-8">
+          <p className="text-muted-foreground/60 text-center text-xs">
+            &copy; {new Date().getFullYear()} ImgText Inc. All rights reserved.
           </p>
         </div>
       </div>

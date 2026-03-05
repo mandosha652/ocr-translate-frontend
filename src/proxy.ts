@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { MAINTENANCE_HTML } from '@/lib/maintenance-html';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const protectedRoutes = [
   '/dashboard',
   '/translate',
@@ -88,9 +90,56 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Generate nonce for CSP (per-request, cryptographically secure)
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''} https://vercel.live https://*.vercel-scripts.com;
+    style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`};
+    img-src 'self' blob: data: https:;
+    font-src 'self';
+    connect-src 'self' https://o4510886285672448.ingest.us.sentry.io https://vercel.live wss:${isDev ? ' http://localhost:* ws://localhost:*' : ''};
+    worker-src 'self' blob:;
+    media-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    frame-ancestors 'none';
+    upgrade-insecure-requests;
+  `;
+
+  // Normalize CSP: remove extra spaces and newlines
+  const contentSecurityPolicyHeaderValue = cspHeader
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  // Set nonce in request headers for layout access
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  // Create response with updated request headers
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Set CSP header on response
+  response.headers.set(
+    'Content-Security-Policy',
+    contentSecurityPolicyHeaderValue
+  );
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)'],
+  matcher: [
+    {
+      source: '/((?!api|_next/static|_next/image|favicon.ico).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+  ],
 };

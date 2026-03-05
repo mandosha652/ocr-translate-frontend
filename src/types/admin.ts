@@ -10,6 +10,7 @@ export interface AdminUserSummary {
 
 export interface AdminUserDetail extends AdminUserSummary {
   updated_at: string;
+  user_type: 'customer' | 'team';
   api_key_count: number;
   total_batches: number;
   total_images_processed: number;

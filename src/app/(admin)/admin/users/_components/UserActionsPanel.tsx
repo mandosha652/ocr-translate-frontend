@@ -44,6 +44,7 @@ interface UserActionsPanelProps {
   userId: string;
   email: string;
   tier: 'free' | 'pro' | 'enterprise';
+  userType: 'customer' | 'team';
   isActive: boolean;
   isVerified: boolean;
 }
@@ -52,11 +53,13 @@ export function UserActionsPanel({
   userId,
   email,
   tier,
+  userType,
   isActive,
   isVerified,
 }: UserActionsPanelProps) {
   const router = useRouter();
   const [selectedTier, setSelectedTier] = useState(tier);
+  const [selectedUserType, setSelectedUserType] = useState(userType);
   const [dangerOpen, setDangerOpen] = useState(false);
 
   const updateUser = useAdminUpdateUser();
@@ -69,6 +72,13 @@ export function UserActionsPanel({
     updateUser.mutate(
       { userId, data: { tier: selectedTier } },
       { onSuccess: () => toast.success('Tier updated') }
+    );
+  };
+
+  const handleSaveUserType = () => {
+    updateUser.mutate(
+      { userId, data: { user_type: selectedUserType } },
+      { onSuccess: () => toast.success('User type updated') }
     );
   };
 
@@ -157,6 +167,34 @@ export function UserActionsPanel({
           <Button
             onClick={handleSaveTier}
             disabled={selectedTier === tier || updateUser.isPending}
+            size="sm"
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+
+      {/* User type */}
+      <div>
+        <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+          User Type
+        </p>
+        <div className="flex gap-2">
+          <Select
+            value={selectedUserType}
+            onValueChange={v => setSelectedUserType(v as 'customer' | 'team')}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="customer">Customer</SelectItem>
+              <SelectItem value="team">Team (VA)</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={handleSaveUserType}
+            disabled={selectedUserType === userType || updateUser.isPending}
             size="sm"
           >
             Save

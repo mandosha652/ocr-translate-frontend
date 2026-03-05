@@ -110,6 +110,7 @@ export default function AdminUserDetailPage() {
               userId={user.id}
               email={user.email}
               tier={user.tier}
+              userType={user.user_type ?? 'customer'}
               isActive={user.is_active}
               isVerified={user.is_verified}
             />

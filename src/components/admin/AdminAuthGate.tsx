@@ -64,6 +64,7 @@ export function AdminAuthGate({ onAuthenticated }: AdminAuthGateProps) {
                   }}
                   placeholder="Enter admin key..."
                   className="pr-10"
+                  autoComplete="off"
                   autoFocus
                 />
                 <Button

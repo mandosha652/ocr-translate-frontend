@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useCallback, useRef, useState } from 'react';
 
-export interface ZoomableImageProps {
+interface ZoomableImageProps {
   src: string;
   alt: string;
   priority?: boolean;

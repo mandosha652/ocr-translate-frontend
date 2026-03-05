@@ -55,18 +55,19 @@ export function BatchCardHeader({
       {/* 2x2 thumbnail grid */}
       <div className="bg-muted grid h-12 w-12 shrink-0 grid-cols-2 gap-0.5 overflow-hidden rounded-lg border">
         {isExpired
-          ? Array.from({ length: 4 }).map((_, i) => (
+          ? [0, 1, 2, 3].map(slot => (
               <div
-                key={i}
+                key={`placeholder-${slot}`}
                 className="bg-muted-foreground/10 flex items-center justify-center"
               >
-                {i === 0 && (
+                {slot === 0 && (
                   <ImageIcon className="text-muted-foreground/40 h-3 w-3" />
                 )}
               </div>
             ))
           : batch.images.slice(0, 4).map((img, i) =>
               img.original_image_url ? (
+                // eslint-disable-next-line react/no-array-index-key
                 <div key={i} className="relative overflow-hidden">
                   <Image
                     src={getImageUrl(img.original_image_url)}
@@ -79,6 +80,7 @@ export function BatchCardHeader({
                   />
                 </div>
               ) : (
+                // eslint-disable-next-line react/no-array-index-key
                 <div key={i} className="bg-muted-foreground/10" />
               )
             )}
@@ -90,11 +92,11 @@ export function BatchCardHeader({
           <span className={cn('text-xs font-semibold', cfg.color)}>
             {cfg.label}
           </span>
-          {isExpired && (
+          {isExpired ? (
             <span className="bg-destructive/10 text-destructive rounded-full px-1.5 py-0.5 text-xs font-medium">
               Results expired
             </span>
-          )}
+          ) : null}
           <span className="text-muted-foreground text-sm">
             {batch.completed_count}/{batch.total_images} images
           </span>

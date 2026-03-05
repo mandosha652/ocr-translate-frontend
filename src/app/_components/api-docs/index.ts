@@ -6,8 +6,6 @@ export { BaseUrlSection } from './BaseUrlSection';
 export { BatchCancelEndpoint } from './BatchCancelEndpoint';
 export { BatchCreateEndpoint } from './BatchCreateEndpoint';
 export { BatchStatusEndpoint } from './BatchStatusEndpoint';
-export { CodeBlock } from './CodeBlock';
-export { EndpointBadge } from './EndpointBadge';
 export { GetStartedSection } from './GetStartedSection';
 export { LimitsSection } from './LimitsSection';
 export { ListBatchesEndpoint } from './ListBatchesEndpoint';

@@ -12,7 +12,7 @@ const options = {
 };
 zxcvbnOptions.setOptions(options);
 
-export interface PasswordStrength {
+interface PasswordStrength {
   score: number;
   label: string;
   color: string;

@@ -1,15 +1,11 @@
 import type { BatchStatus } from '@/types/batch';
 
-export const NOTIFICATION_CAP = 20;
 export const NOTIFICATION_PREFS_KEY = 'notification_prefs';
 export const NOTIFICATION_PREFS_DEFAULTS = {
   batch_complete_toast: true,
   batch_complete_push: true,
   batch_complete_email: false,
 };
-
-// OCR confidence threshold — regions below this are flagged as low-confidence
-export const CONFIDENCE_THRESHOLD = 0.7;
 
 export const BATCH_STATUS_CONFIG: Record<
   BatchStatus,

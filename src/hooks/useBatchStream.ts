@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { API_BASE_URL, ENDPOINTS } from '@/lib/constants';
 
-export interface BatchProgressEvent {
+interface BatchProgressEvent {
   batch_id: string;
   status: string;
   total_images: number;

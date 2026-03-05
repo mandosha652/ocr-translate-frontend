@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export interface AppNotification {
+interface AppNotification {
   id: string;
   message: string;
   href: string;

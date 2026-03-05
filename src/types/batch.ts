@@ -24,15 +24,6 @@ export interface ImageResult {
   error: string | null;
 }
 
-export interface BatchCreateRequest {
-  files?: File[];
-  image_urls?: string;
-  source_language?: string;
-  target_languages: string;
-  exclude_text?: string;
-  webhook_url?: string;
-}
-
 export interface BatchCreateResponse {
   success: boolean;
   batch_id: string;

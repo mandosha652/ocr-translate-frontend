@@ -18,18 +18,11 @@ export interface TextRegion {
   confidence: number;
 }
 
-export interface BoundingBox {
+interface BoundingBox {
   x: number;
   y: number;
   width: number;
   height: number;
-}
-
-export interface TranslateErrorResponse {
-  success: false;
-  error: string;
-  step: string;
-  message: string;
 }
 
 export type TranslationJobStatus =

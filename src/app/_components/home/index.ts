@@ -2,7 +2,6 @@ export { APIShowcaseSection } from './APIShowcaseSection';
 export { BeforeAfterSection } from './BeforeAfterSection';
 export { ComparisonSection } from './ComparisonSection';
 export { CTASection } from './CTASection';
-export { DemoSection } from './DemoSection';
 export { FeaturesSection } from './FeaturesSection';
 export { HeroSection } from './HeroSection';
 export { HomeFooter } from './HomeFooter';

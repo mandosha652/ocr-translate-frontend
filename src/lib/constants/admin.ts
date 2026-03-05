@@ -5,7 +5,7 @@ export const TIER_STYLES: Record<string, string> = {
     'border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-400',
 };
 
-export const AVATAR_COLORS = [
+const AVATAR_COLORS = [
   'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400',
   'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400',
   'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400',
@@ -22,23 +22,6 @@ export function avatarColor(email: string): string {
     hash = (hash * 31 + email.charCodeAt(i)) >>> 0;
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
-
-export function fmt(val: number | null | undefined): string {
-  if (val == null) return '—';
-  return `$${val.toFixed(4)}`;
-}
-
-export const ADMIN_STATUS_CONFIG: Record<
-  string,
-  { label: string; color: string }
-> = {
-  pending: { label: 'Pending', color: 'text-amber-600' },
-  processing: { label: 'Processing', color: 'text-blue-600' },
-  completed: { label: 'Completed', color: 'text-green-600' },
-  partially_completed: { label: 'Partial', color: 'text-amber-600' },
-  failed: { label: 'Failed', color: 'text-destructive' },
-  cancelled: { label: 'Cancelled', color: 'text-muted-foreground' },
-};
 
 export const ADMIN_BATCH_STATUS_CONFIG: Record<
   string,

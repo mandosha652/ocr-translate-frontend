@@ -1,23 +1,12 @@
 import {
   differenceInDays,
   format,
-  formatDistanceToNow,
   formatDistanceToNowStrict,
-  isAfter,
   isPast,
   isToday,
   isTomorrow,
   isYesterday,
-  subDays,
 } from 'date-fns';
-
-export function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  if (isAfter(date, subDays(new Date(), 7))) {
-    return formatDistanceToNow(date, { addSuffix: true });
-  }
-  return format(date, 'MMM d');
-}
 
 export function formatLastActive(iso: string | null): string {
   if (!iso) return 'No activity yet';

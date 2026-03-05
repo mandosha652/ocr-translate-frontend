@@ -10,6 +10,7 @@ const DEV_USER: User = {
   email: 'dev@example.com',
   name: 'Dev User',
   tier: 'pro',
+  user_type: 'customer',
   is_active: true,
   is_verified: true,
   created_at: new Date().toISOString(),

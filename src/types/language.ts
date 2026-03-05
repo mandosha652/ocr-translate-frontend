@@ -1,4 +1,4 @@
-export interface Language {
+interface Language {
   code: string;
   name: string;
 }
@@ -16,4 +16,5 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'da', name: 'Danish' },
   { code: 'no', name: 'Norwegian' },
   { code: 'fi', name: 'Finnish' },
+  { code: 'pl', name: 'Polish' },
 ];

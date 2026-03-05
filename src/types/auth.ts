@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string | null;
   tier: string;
+  user_type: 'customer' | 'team';
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
@@ -37,10 +38,6 @@ export interface LoginResponse {
   success: boolean;
   user: User;
   tokens: AuthTokens;
-}
-
-export interface RefreshTokenRequest {
-  refresh_token: string;
 }
 
 export interface VerifyEmailRequest {

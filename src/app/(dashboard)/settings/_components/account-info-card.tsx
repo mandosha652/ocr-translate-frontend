@@ -104,7 +104,7 @@ export function AccountInfoCard({ user, isLoadingUser }: AccountInfoCardProps) {
                 <Label>Plan</Label>
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="capitalize">
-                    {user?.tier || 'Free'}
+                    {user?.user_type === 'team' ? 'Team' : user?.tier || 'Free'}
                   </Badge>
                 </div>
               </div>

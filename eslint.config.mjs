@@ -15,17 +15,48 @@ const eslintConfig = defineConfig([
       "simple-import-sort": simpleImportSort,
     },
     rules: {
+      // --- TypeScript ---
       "@typescript-eslint/no-unused-vars": [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
-      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/consistent-type-imports": [
+        "warn",
+        { prefer: "type-imports", fixStyle: "inline-type-imports" },
+      ],
+      "@typescript-eslint/no-import-type-side-effects": "error",
+
+      // --- Core JS ---
       "prefer-const": "error",
       "no-console": ["warn", { allow: ["warn", "error"] }],
-      "react-hooks/set-state-in-effect": "off",
-      "max-lines": "off",
-      "max-lines-per-function": "off",
-      complexity: "off",
+      "no-debugger": "error",
+      "no-alert": "error",
+      "no-duplicate-imports": "error",
+      "no-self-compare": "error",
+      "no-template-curly-in-string": "warn",
+      "no-unneeded-ternary": "warn",
+      "object-shorthand": "warn",
+      "prefer-template": "warn",
+      eqeqeq: ["error", "always"],
+      curly: ["warn", "multi-line"],
+      complexity: ["warn", { max: 20 }],
+
+      // --- React ---
+      "react/self-closing-comp": "warn",
+      "react/jsx-no-useless-fragment": ["warn", { allowExpressions: true }],
+      "react/jsx-curly-brace-presence": [
+        "warn",
+        { props: "never", children: "never" },
+      ],
+      "react/no-array-index-key": "warn",
+      "react/jsx-boolean-value": ["warn", "never"],
+      "react/jsx-no-leaked-render": [
+        "warn",
+        { validStrategies: ["ternary", "coerce"] },
+      ],
+
+      // --- Import sorting ---
       "simple-import-sort/imports": "warn",
       "simple-import-sort/exports": "warn",
     },

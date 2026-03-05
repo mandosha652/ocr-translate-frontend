@@ -19,7 +19,7 @@ export const ENDPOINTS = {
   RESET_PASSWORD: '/api/v1/auth/reset-password',
 
   // Usage & account
-  USAGE_STATS: '/api/v1/usage/me/usage',
+  USAGE_STATS: '/api/v1/me/usage',
   CHANGE_PASSWORD: '/api/v1/auth/change-password',
   DELETE_ACCOUNT: '/api/v1/auth/me',
 

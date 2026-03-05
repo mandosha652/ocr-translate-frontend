@@ -98,7 +98,7 @@ export function proxy(request: NextRequest) {
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self';
-    connect-src 'self' https://o4510886285672448.ingest.us.sentry.io https://vercel.live wss:${isDev ? ' http://localhost:* ws://localhost:*' : ''};
+    connect-src 'self' https://api.imgtext.io https://o4510886285672448.ingest.us.sentry.io https://vercel.live wss:${isDev ? ' http://localhost:* ws://localhost:*' : ''};
     worker-src 'self' blob:;
     media-src 'self';
     object-src 'none';

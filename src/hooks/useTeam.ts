@@ -1,10 +1,25 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 import { teamApi, teamTokenStorage } from '@/lib/api/team';
-import { BATCH_STATUS_POLL_INTERVAL } from '@/lib/constants';
+import {
+  BATCH_LIST_POLL_INTERVAL,
+  BATCH_STATUS_POLL_INTERVAL,
+  TEAM_SLUG,
+} from '@/lib/constants';
 import type { TeamBatchStatus } from '@/types';
+
+/** Returns true only after hydration, avoiding server/client mismatch for localStorage checks. */
+function useHasTeamToken() {
+  const [has] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return teamTokenStorage.has();
+  });
+  return has;
+}
 
 // ---------------------------------------------------------------------------
 // Auth
@@ -18,6 +33,19 @@ export function useTeamLogin() {
       teamApi.login(email, password),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['team-batches'] });
+    },
+  });
+}
+
+export function useTeamLogout() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => teamApi.logout(),
+    onSettled: () => {
+      queryClient.clear();
+      router.push(`/ops/${TEAM_SLUG}/login`);
     },
   });
 }
@@ -42,11 +70,20 @@ export function useTeamUploadCsv() {
 // ---------------------------------------------------------------------------
 
 export function useTeamBatches() {
+  const hasToken = useHasTeamToken();
   return useQuery({
     queryKey: ['team-batches'],
     queryFn: () => teamApi.listBatches(),
-    enabled: teamTokenStorage.has(),
+    enabled: hasToken,
     staleTime: 10_000,
+    refetchInterval: query => {
+      const batches = query.state.data?.batches;
+      if (!batches) return false;
+      const hasActive = batches.some(b =>
+        ['pending', 'processing'].includes(b.status)
+      );
+      return hasActive ? BATCH_LIST_POLL_INTERVAL : false;
+    },
   });
 }
 
@@ -61,10 +98,11 @@ function _isDone(batch: TeamBatchStatus): boolean {
 }
 
 export function useTeamBatchStatus(id: string | null) {
+  const hasToken = useHasTeamToken();
   return useQuery({
     queryKey: ['team-batch', id],
     queryFn: () => teamApi.getBatchStatus(id!),
-    enabled: !!id && teamTokenStorage.has(),
+    enabled: !!id && hasToken,
     refetchInterval: query => {
       const data = query.state.data;
       return !data || _isDone(data) ? false : BATCH_STATUS_POLL_INTERVAL;
@@ -89,6 +127,22 @@ export function useTeamExportCsv(id: string | null) {
       a.download = `batch_${id ?? 'export'}.csv`;
       a.click();
       URL.revokeObjectURL(url);
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cancel batch
+// ---------------------------------------------------------------------------
+
+export function useTeamCancelBatch() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (batchId: string) => teamApi.cancelBatch(batchId),
+    onSuccess: (_data, batchId) => {
+      queryClient.invalidateQueries({ queryKey: ['team-batches'] });
+      queryClient.invalidateQueries({ queryKey: ['team-batch', batchId] });
     },
   });
 }

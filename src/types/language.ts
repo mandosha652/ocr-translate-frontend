@@ -18,3 +18,10 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: 'fi', name: 'Finnish' },
   { code: 'pl', name: 'Polish' },
 ];
+
+const LANG_MAP = new Map(SUPPORTED_LANGUAGES.map(l => [l.code, l.name]));
+
+/** Returns the full language name for a code, e.g. "de" → "German". Falls back to uppercase code. */
+export function langName(code: string): string {
+  return LANG_MAP.get(code.toLowerCase()) ?? code.toUpperCase();
+}

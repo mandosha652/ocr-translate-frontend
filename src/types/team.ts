@@ -1,4 +1,4 @@
-import type { BatchStatus } from './batch';
+import type { BatchStatus, ImageResult } from './batch';
 
 export interface TeamLoginResponse {
   access_token: string;
@@ -32,4 +32,11 @@ export type CaptionsStatus = 'pending' | 'processing' | 'completed';
 
 export interface TeamBatchStatus extends TeamBatchSummary {
   captions_status: CaptionsStatus;
+  images?: ImageResult[];
+}
+
+export interface TeamBatchCancelResponse {
+  batch_id: string;
+  status: BatchStatus;
+  message: string;
 }

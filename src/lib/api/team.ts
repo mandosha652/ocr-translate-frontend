@@ -5,10 +5,12 @@
  * interfere with customer sessions managed by the main apiClient.
  */
 
-import axios, { AxiosInstance } from 'axios';
+import axios, { type AxiosInstance } from 'axios';
+import { toast } from 'sonner';
 
 import { API_BASE_URL, TEAM_ENDPOINTS, TEAM_SLUG } from '@/lib/constants';
 import type {
+  TeamBatchCancelResponse,
   TeamBatchCreateResponse,
   TeamBatchListResponse,
   TeamBatchStatus,
@@ -26,8 +28,9 @@ export const teamTokenStorage = {
     typeof window !== 'undefined' ? localStorage.getItem(TEAM_TOKEN_KEY) : null,
 
   set: (token: string): void => {
-    if (typeof window !== 'undefined')
+    if (typeof window !== 'undefined') {
       localStorage.setItem(TEAM_TOKEN_KEY, token);
+    }
   },
 
   clear: (): void => {
@@ -60,6 +63,7 @@ teamClient.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       teamTokenStorage.clear();
+      toast.error('Session expired — please sign in again');
       if (!TEAM_SLUG) {
         console.warn(
           '[teamApi] NEXT_PUBLIC_TEAM_SLUG is not set — cannot redirect to team login'
@@ -89,6 +93,17 @@ export const teamApi = {
     );
     teamTokenStorage.set(data.access_token);
     return data;
+  },
+
+  /** Logout — best-effort server revocation, always clear local token. */
+  async logout(): Promise<void> {
+    try {
+      await teamClient.post(TEAM_ENDPOINTS.LOGOUT);
+    } catch {
+      // Best-effort — always clear token locally
+    } finally {
+      teamTokenStorage.clear();
+    }
   },
 
   /** Upload a CSV file and kick off the batch. */
@@ -129,6 +144,14 @@ export const teamApi = {
       {
         responseType: 'blob',
       }
+    );
+    return data;
+  },
+
+  /** Cancel a pending/processing batch. */
+  async cancelBatch(id: string): Promise<TeamBatchCancelResponse> {
+    const { data } = await teamClient.post<TeamBatchCancelResponse>(
+      TEAM_ENDPOINTS.BATCH_CANCEL(id)
     );
     return data;
   },

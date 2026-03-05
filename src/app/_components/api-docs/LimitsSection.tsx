@@ -6,7 +6,7 @@ export function LimitsSection() {
         {[
           { label: 'Max file size', value: '10 MB' },
           { label: 'Max images per batch', value: '20' },
-          { label: 'Max languages per batch', value: '10' },
+          { label: 'Max languages per batch', value: '3 (free) / 12 (pro)' },
           { label: 'Max concurrent batches', value: '3' },
         ].map(item => (
           <div

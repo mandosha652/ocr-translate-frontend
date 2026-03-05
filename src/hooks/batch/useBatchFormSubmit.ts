@@ -3,7 +3,10 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { MAX_CONCURRENT_BATCHES, MAX_TARGET_LANGUAGES } from '@/lib/constants';
+import {
+  FREE_TIER_MAX_TARGET_LANGUAGES,
+  MAX_CONCURRENT_BATCHES,
+} from '@/lib/constants';
 import { getErrorMessage, getErrorStatus } from '@/lib/utils/error';
 import { isValidHttpUrl } from '@/lib/utils/url';
 
@@ -21,6 +24,7 @@ interface UseBatchFormSubmitArgs {
   webhookUrl: string;
   isWebhookValid: boolean;
   activeBatchCount: number;
+  maxTargetLanguages?: number;
   onBatchStarted: () => void;
   onUpgradeRequired: () => void;
   resetForm: () => void;
@@ -46,6 +50,7 @@ export function useBatchFormSubmit({
   webhookUrl,
   isWebhookValid,
   activeBatchCount,
+  maxTargetLanguages = FREE_TIER_MAX_TARGET_LANGUAGES,
   onBatchStarted,
   onUpgradeRequired,
   resetForm,
@@ -69,9 +74,9 @@ export function useBatchFormSubmit({
       toast.error('Choose at least one target language');
       return;
     }
-    if (targetLanguages.length > MAX_TARGET_LANGUAGES) {
+    if (targetLanguages.length > maxTargetLanguages) {
       toast.error(
-        `You can only select up to ${MAX_TARGET_LANGUAGES} languages at once`
+        `You can only select up to ${maxTargetLanguages} languages at once`
       );
       return;
     }
@@ -121,6 +126,7 @@ export function useBatchFormSubmit({
     webhookUrl,
     isWebhookValid,
     activeBatchCount,
+    maxTargetLanguages,
     createBatchMutation,
     resetForm,
     onBatchStarted,

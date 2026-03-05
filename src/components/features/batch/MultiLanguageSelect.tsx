@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useLanguageSelection } from '@/hooks/batch/useLanguageSelection';
-import { MAX_TARGET_LANGUAGES } from '@/lib/constants';
+import { FREE_TIER_MAX_TARGET_LANGUAGES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { SUPPORTED_LANGUAGES } from '@/types';
 
@@ -15,6 +15,7 @@ interface MultiLanguageSelectProps {
   onChange: (languages: string[]) => void;
   label?: string;
   disabled?: boolean;
+  maxLanguages?: number;
 }
 
 export function MultiLanguageSelect({
@@ -22,13 +23,14 @@ export function MultiLanguageSelect({
   onChange,
   label,
   disabled,
+  maxLanguages = FREE_TIER_MAX_TARGET_LANGUAGES,
 }: MultiLanguageSelectProps) {
   const {
     toggleLanguage,
     removeLanguage,
     getLanguageName,
     isLanguageDisabled,
-  } = useLanguageSelection(selectedLanguages, onChange);
+  } = useLanguageSelection(selectedLanguages, onChange, maxLanguages);
 
   return (
     <div className="space-y-3">
@@ -59,8 +61,8 @@ export function MultiLanguageSelect({
 
       <div className="rounded-lg border p-3">
         <p className="text-muted-foreground mb-2 text-xs">
-          Select up to {MAX_TARGET_LANGUAGES} languages (
-          {selectedLanguages.length}/{MAX_TARGET_LANGUAGES})
+          Select up to {maxLanguages} languages ({selectedLanguages.length}/
+          {maxLanguages})
         </p>
         <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
           {SUPPORTED_LANGUAGES.map(lang => {

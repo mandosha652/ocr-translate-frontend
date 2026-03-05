@@ -16,6 +16,7 @@ interface MultiImageUploaderProps {
   onFilesChange: (files: File[]) => void;
   selectedFiles: File[];
   disabled?: boolean;
+  maxBatchSize?: number;
 }
 
 const getFileKey = (file: File) =>
@@ -25,6 +26,7 @@ export function MultiImageUploader({
   onFilesChange,
   selectedFiles,
   disabled,
+  maxBatchSize = MAX_BATCH_SIZE,
 }: MultiImageUploaderProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<{
@@ -36,11 +38,11 @@ export function MultiImageUploader({
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const remainingSlots = MAX_BATCH_SIZE - selectedFiles.length;
+      const remainingSlots = maxBatchSize - selectedFiles.length;
       const filesToAdd = acceptedFiles.slice(0, remainingSlots);
       onFilesChange([...selectedFiles, ...filesToAdd]);
     },
-    [selectedFiles, onFilesChange]
+    [selectedFiles, onFilesChange, maxBatchSize]
   );
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } =
@@ -53,10 +55,10 @@ export function MultiImageUploader({
       },
       maxSize: MAX_FILE_SIZE_BYTES,
       multiple: true,
-      disabled: disabled || selectedFiles.length >= MAX_BATCH_SIZE,
+      disabled: disabled || selectedFiles.length >= maxBatchSize,
     });
 
-  const atCapacity = selectedFiles.length >= MAX_BATCH_SIZE;
+  const atCapacity = selectedFiles.length >= maxBatchSize;
   const totalSizeMB = (
     selectedFiles.reduce((acc, f) => acc + f.size, 0) /
     1024 /
@@ -73,6 +75,7 @@ export function MultiImageUploader({
         atCapacity={atCapacity}
         onDrop={onDrop}
         cameraInputRef={cameraInputRef}
+        maxBatchSize={maxBatchSize}
       />
 
       <FileRejectionList rejections={fileRejections} />
@@ -81,8 +84,8 @@ export function MultiImageUploader({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground text-sm">
-              {selectedFiles.length} of {MAX_BATCH_SIZE} images ({totalSizeMB}{' '}
-              MB total)
+              {selectedFiles.length} of {maxBatchSize} images ({totalSizeMB} MB
+              total)
             </p>
             <Button
               variant="ghost"

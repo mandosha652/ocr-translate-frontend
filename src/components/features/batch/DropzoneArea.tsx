@@ -19,6 +19,7 @@ interface DropzoneAreaProps {
   atCapacity: boolean;
   onDrop: (files: File[]) => void;
   cameraInputRef: React.RefObject<HTMLInputElement | null>;
+  maxBatchSize?: number;
 }
 
 export function DropzoneArea({
@@ -29,6 +30,7 @@ export function DropzoneArea({
   atCapacity,
   onDrop,
   cameraInputRef,
+  maxBatchSize = MAX_BATCH_SIZE,
 }: DropzoneAreaProps) {
   return (
     <>
@@ -65,7 +67,7 @@ export function DropzoneArea({
                 : 'Drag & drop images, or click to browse'}
             </p>
             <p className="text-muted-foreground mt-1 text-sm">
-              Up to {MAX_BATCH_SIZE} images, max {MAX_FILE_SIZE_MB}MB each
+              Up to {maxBatchSize} images, max {MAX_FILE_SIZE_MB}MB each
             </p>
           </div>
           <p className="text-muted-foreground text-xs">

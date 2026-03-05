@@ -94,6 +94,7 @@ export interface UsageQuota {
   images_limit: number | null;
   translations_limit: number | null;
   batches_limit: number | null;
+  images_per_batch: number;
   images_used: number;
   translations_used: number;
   batches_used: number;

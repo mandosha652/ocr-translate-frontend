@@ -3,7 +3,8 @@ import { isValidHttpUrl } from '@/lib/utils';
 
 export function useUrlInput(
   urls: string[],
-  onChange: (urls: string[]) => void
+  onChange: (urls: string[]) => void,
+  maxBatchSize: number = MAX_BATCH_SIZE
 ) {
   const handleChange = (index: number, value: string) => {
     const next = [...urls];
@@ -12,7 +13,7 @@ export function useUrlInput(
   };
 
   const handleAdd = () => {
-    if (urls.length < MAX_BATCH_SIZE) {
+    if (urls.length < maxBatchSize) {
       onChange([...urls, '']);
     }
   };
@@ -29,7 +30,7 @@ export function useUrlInput(
     u => u.trim() && isValidHttpUrl(u.trim())
   ).length;
 
-  const canAddMore = urls.length < MAX_BATCH_SIZE;
+  const canAddMore = urls.length < maxBatchSize;
 
   return {
     handleChange,

@@ -25,7 +25,13 @@ import {
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBatchFormSubmit } from '@/hooks';
-import { MAX_CONCURRENT_BATCHES } from '@/lib/constants';
+import {
+  FREE_TIER_MAX_TARGET_LANGUAGES,
+  MAX_BATCH_SIZE,
+  MAX_CONCURRENT_BATCHES,
+  PRO_TIER_MAX_TARGET_LANGUAGES,
+} from '@/lib/constants';
+import { useAuthStore } from '@/store/authStore';
 
 import { BatchExcludeInput } from './BatchExcludeInput';
 import { BatchWebhookInput, isWebhookUrlValid } from './BatchWebhookInput';
@@ -36,13 +42,21 @@ interface BatchFormCardProps {
   activeBatchCount: number;
   onBatchStarted: () => void;
   onUpgradeRequired: () => void;
+  maxBatchSize?: number;
 }
 
 export function BatchFormCard({
   activeBatchCount,
   onBatchStarted,
   onUpgradeRequired,
+  maxBatchSize = MAX_BATCH_SIZE,
 }: BatchFormCardProps) {
+  const { user } = useAuthStore();
+  const maxTargetLanguages =
+    user?.tier === 'pro' || user?.tier === 'enterprise'
+      ? PRO_TIER_MAX_TARGET_LANGUAGES
+      : FREE_TIER_MAX_TARGET_LANGUAGES;
+
   const [inputMode, setInputMode] = useState<InputMode>('upload');
   const [files, setFiles] = useState<File[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>(['']);
@@ -79,6 +93,7 @@ export function BatchFormCard({
     onBatchStarted,
     onUpgradeRequired,
     resetForm,
+    maxTargetLanguages,
   });
 
   return (
@@ -114,6 +129,7 @@ export function BatchFormCard({
               onFilesChange={setFiles}
               selectedFiles={files}
               disabled={isPending}
+              maxBatchSize={maxBatchSize}
             />
           </TabsContent>
           <TabsContent value="url" className="mt-4">
@@ -121,6 +137,7 @@ export function BatchFormCard({
               urls={imageUrls}
               onChange={setImageUrls}
               disabled={isPending}
+              maxBatchSize={maxBatchSize}
             />
           </TabsContent>
         </Tabs>
@@ -139,6 +156,7 @@ export function BatchFormCard({
           onChange={setTargetLanguages}
           label="Target Languages"
           disabled={isPending}
+          maxLanguages={maxTargetLanguages}
         />
 
         <BatchExcludeInput

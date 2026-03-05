@@ -66,6 +66,7 @@ export default function BatchPage() {
             activeBatchCount={activeBatches.length}
             onBatchStarted={handleBatchDone}
             onUpgradeRequired={() => setUpgradeOpen(true)}
+            maxBatchSize={usageStats?.quota?.images_per_batch}
           />
         </div>
 

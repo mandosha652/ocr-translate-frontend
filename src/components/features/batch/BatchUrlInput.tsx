@@ -12,15 +12,17 @@ interface BatchUrlInputProps {
   urls: string[];
   onChange: (urls: string[]) => void;
   disabled?: boolean;
+  maxBatchSize?: number;
 }
 
 export function BatchUrlInput({
   urls,
   onChange,
   disabled,
+  maxBatchSize = MAX_BATCH_SIZE,
 }: BatchUrlInputProps) {
   const { handleChange, handleAdd, handleRemove, validCount, canAddMore } =
-    useUrlInput(urls, onChange);
+    useUrlInput(urls, onChange, maxBatchSize);
 
   return (
     <div className="space-y-3">
@@ -80,7 +82,7 @@ export function BatchUrlInput({
               {validCount !== 1 ? 's' : ''}
             </>
           ) : (
-            `0 of ${MAX_BATCH_SIZE} max`
+            `0 of ${maxBatchSize} max`
           )}
         </p>
       </div>

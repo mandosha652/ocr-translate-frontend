@@ -18,8 +18,9 @@ const AVATAR_COLORS = [
 
 export function avatarColor(email: string): string {
   let hash = 0;
-  for (let i = 0; i < email.length; i++)
+  for (let i = 0; i < email.length; i++) {
     hash = (hash * 31 + email.charCodeAt(i)) >>> 0;
+  }
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 

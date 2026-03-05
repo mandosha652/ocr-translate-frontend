@@ -143,13 +143,13 @@ export function NotificationPrefsCard() {
             />
           ))}
         </div>
-        {dirty && (
+        {dirty ? (
           <div className="mt-4">
             <Button size="sm" onClick={handleSave}>
               Save preferences
             </Button>
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

@@ -26,8 +26,9 @@ const AVATAR_COLORS = [
 
 function avatarColor(email: string): string {
   let hash = 0;
-  for (let i = 0; i < email.length; i++)
+  for (let i = 0; i < email.length; i++) {
     hash = (hash * 31 + email.charCodeAt(i)) >>> 0;
+  }
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
@@ -55,11 +56,11 @@ export function UserRow({ user }: { user: AdminUserSummary }) {
           <p className="truncate text-sm leading-tight font-medium">
             {user.email}
           </p>
-          {user.name && (
+          {user.name ? (
             <p className="text-muted-foreground mt-0.5 truncate text-xs leading-tight">
               {user.name}
             </p>
-          )}
+          ) : null}
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">

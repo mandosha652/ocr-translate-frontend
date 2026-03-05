@@ -47,9 +47,9 @@ export function BatchImageList({
             <div className={`h-2 w-2 shrink-0 rounded-full ${config.dot}`} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm">{image.original_filename}</p>
-              {image.error && (
+              {image.error ? (
                 <p className="text-destructive text-xs">{image.error}</p>
-              )}
+              ) : null}
             </div>
             <span
               className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium whitespace-nowrap ${config.className}`}

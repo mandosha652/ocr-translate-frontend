@@ -11,8 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import type { User } from '@/types';
-import type { UsageStatsResponse } from '@/types';
+import type { UsageStatsResponse, User } from '@/types';
 
 interface AccountCardProps {
   user: User | null | undefined;

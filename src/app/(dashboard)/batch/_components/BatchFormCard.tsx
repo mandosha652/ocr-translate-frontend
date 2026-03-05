@@ -170,7 +170,7 @@ export function BatchFormCard({
           disabled={isPending}
         />
 
-        {atConcurrentLimit && (
+        {atConcurrentLimit ? (
           <div className="text-muted-foreground flex items-center gap-2 rounded-lg border px-3 py-2.5 text-sm">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>
@@ -179,7 +179,7 @@ export function BatchFormCard({
               one to finish
             </span>
           </div>
-        )}
+        ) : null}
 
         <Button
           onClick={handleStartBatch}

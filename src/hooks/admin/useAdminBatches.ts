@@ -2,8 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { AdminBatchesParams } from '@/lib/api/admin';
-import { adminApi } from '@/lib/api/admin';
+import { adminApi, type AdminBatchesParams } from '@/lib/api/admin';
 
 import { adminEnabled } from './adminEnabled';
 

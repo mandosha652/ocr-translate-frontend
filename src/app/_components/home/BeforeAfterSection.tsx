@@ -108,7 +108,7 @@ export function BeforeAfterSection() {
                 'all in one seamless step.',
               ].map((phrase, idx) => (
                 <motion.span
-                  key={idx}
+                  key={phrase}
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -447,7 +447,7 @@ export function BeforeAfterSection() {
             { value: '1.2s', label: 'Rendering', icon: '✨' },
           ].map((stat, idx) => (
             <motion.div
-              key={idx}
+              key={stat.label}
               initial={{ opacity: 0, y: 15 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

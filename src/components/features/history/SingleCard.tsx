@@ -58,11 +58,11 @@ export function SingleCard({ item }: SingleCardProps) {
               {item.source_lang ? `${getLangName(item.source_lang)} → ` : ''}
               {getLangName(item.target_lang)}
             </span>
-            {isExpired && (
+            {isExpired ? (
               <span className="bg-destructive/10 text-destructive rounded-full px-1.5 py-0.5 text-xs font-medium">
                 Expired
               </span>
-            )}
+            ) : null}
           </div>
           <p className="text-muted-foreground mt-0.5 flex items-center gap-1 text-xs">
             <Clock className="h-3 w-3" />
@@ -109,7 +109,7 @@ export function SingleCard({ item }: SingleCardProps) {
         </div>
       </button>
 
-      {expanded && (
+      {expanded ? (
         <div id={panelId} className="border-t px-4 pt-3 pb-4">
           {isExpired ? (
             <p className="text-muted-foreground text-sm">
@@ -176,7 +176,7 @@ export function SingleCard({ item }: SingleCardProps) {
             </div>
           )}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

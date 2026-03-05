@@ -54,7 +54,7 @@ export default function AdminUsersPage() {
         <div>
           <h1 className="text-2xl font-bold">Users</h1>
           <p className="text-muted-foreground mt-0.5 text-sm">
-            {data?.total != null
+            {data?.total !== null && data?.total !== undefined
               ? `${data.total.toLocaleString()} total users`
               : 'All platform users'}
           </p>

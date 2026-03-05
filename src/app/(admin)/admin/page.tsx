@@ -29,6 +29,7 @@ function StatsSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <div key={i} className="bg-muted h-[72px] animate-pulse rounded-xl" />
       ))}
     </div>

@@ -43,17 +43,17 @@ export function TranslateResultPanel({
 
   return (
     <div>
-      {isBusy && (
+      {isBusy ? (
         <TranslateProgressCard
           pageState={pageState}
           inputMode={inputMode}
           jobStatus={jobStatus}
         />
-      )}
+      ) : null}
 
-      {pageState === 'done' && outputUrl && (
+      {pageState === 'done' && outputUrl ? (
         <TranslationJobResult outputUrl={outputUrl} targetLang={targetLang} />
-      )}
+      ) : null}
 
       {pageState === 'error' && (
         <Card className="animate-in fade-in-0 border-destructive/50 duration-300">

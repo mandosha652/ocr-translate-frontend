@@ -47,14 +47,14 @@ export function BrokerHealthCard() {
               <span>RabbitMQ</span>
             </div>
             <div className="flex items-center gap-2">
-              {!isUp && broker.error && (
+              {!isUp && broker.error ? (
                 <span
                   className="text-destructive max-w-[160px] truncate text-xs"
                   title={broker.error}
                 >
                   {broker.error}
                 </span>
-              )}
+              ) : null}
               <Badge
                 variant="outline"
                 className={

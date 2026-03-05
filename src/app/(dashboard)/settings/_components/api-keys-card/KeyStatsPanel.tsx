@@ -46,19 +46,20 @@ export function KeyStatsPanel({ keyId, expiresAt }: KeyStatsPanelProps) {
           </span>
         ))}
       </div>
-      {expiresAt &&
-        (() => {
-          const expiry = formatExpiry(expiresAt);
-          if (!expiry) return null;
-          return (
-            <p
-              className={`mt-0.5 flex items-center gap-1 text-xs ${expiry.urgent ? 'text-amber-600' : 'text-muted-foreground'}`}
-            >
-              <Calendar className="h-3 w-3" />
-              {expiry.label}
-            </p>
-          );
-        })()}
+      {expiresAt
+        ? (() => {
+            const expiry = formatExpiry(expiresAt);
+            if (!expiry) return null;
+            return (
+              <p
+                className={`mt-0.5 flex items-center gap-1 text-xs ${expiry.urgent ? 'text-amber-600' : 'text-muted-foreground'}`}
+              >
+                <Calendar className="h-3 w-3" />
+                {expiry.label}
+              </p>
+            );
+          })()
+        : null}
     </>
   );
 }

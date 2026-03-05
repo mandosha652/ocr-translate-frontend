@@ -76,6 +76,7 @@ function TestimonialCard({
         {/* Rating */}
         <div className="mb-4 flex gap-1">
           {Array.from({ length: testimonial.rating }).map((_, i) => (
+            // eslint-disable-next-line react/no-array-index-key
             <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
           ))}
         </div>

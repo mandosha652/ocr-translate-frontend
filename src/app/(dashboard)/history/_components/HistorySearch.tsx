@@ -19,7 +19,7 @@ export function HistorySearch({ value, onChange }: HistorySearchProps) {
         onChange={e => onChange(e.target.value)}
         className="h-9 pr-8 pl-8 text-sm"
       />
-      {value && (
+      {value ? (
         <button
           onClick={() => onChange('')}
           title="Clear"
@@ -27,7 +27,7 @@ export function HistorySearch({ value, onChange }: HistorySearchProps) {
         >
           <X className="h-3.5 w-3.5" />
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

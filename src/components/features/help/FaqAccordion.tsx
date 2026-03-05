@@ -19,7 +19,7 @@ export function FaqAccordion({ faqs }: { faqs: FaqItem[] }) {
         const isOpen = openIndex === i;
         return (
           <div
-            key={i}
+            key={faq.q}
             className="hover:border-border/80 rounded-lg border transition-colors"
           >
             <button

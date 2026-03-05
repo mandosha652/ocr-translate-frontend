@@ -43,7 +43,7 @@ export function KeyListItem({ apiKey }: KeyListItemProps) {
         <Badge variant={apiKey.is_active ? 'default' : 'secondary'}>
           {apiKey.is_active ? 'Active' : 'Revoked'}
         </Badge>
-        {apiKey.is_active && (
+        {apiKey.is_active ? (
           <Button
             variant="ghost"
             size="icon"
@@ -57,8 +57,8 @@ export function KeyListItem({ apiKey }: KeyListItemProps) {
               <RefreshCw className="h-4 w-4" />
             )}
           </Button>
-        )}
-        {apiKey.is_active && <RevokeDialog apiKey={apiKey} />}
+        ) : null}
+        {apiKey.is_active ? <RevokeDialog apiKey={apiKey} /> : null}
       </div>
     </div>
   );

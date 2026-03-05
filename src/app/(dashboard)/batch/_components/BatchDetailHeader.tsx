@@ -31,7 +31,9 @@ export function BatchDetailHeader({
       <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Badge variant={cfg.variant}>{cfg.label}</Badge>
-          {isExpired && <Badge variant="destructive">Results expired</Badge>}
+          {isExpired ? (
+            <Badge variant="destructive">Results expired</Badge>
+          ) : null}
         </div>
         <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
           <Clock className="h-3.5 w-3.5" />
@@ -45,7 +47,7 @@ export function BatchDetailHeader({
         </p>
       </div>
 
-      {isProcessing && (
+      {isProcessing ? (
         <Button
           variant="destructive"
           size="sm"
@@ -64,7 +66,7 @@ export function BatchDetailHeader({
             </>
           )}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

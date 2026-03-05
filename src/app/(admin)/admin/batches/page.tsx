@@ -42,7 +42,7 @@ function PageHeader({
       <div>
         <h1 className="text-2xl font-bold">Batches</h1>
         <p className="text-muted-foreground mt-0.5 text-sm">
-          {total != null
+          {total !== null && total !== undefined
             ? `${total.toLocaleString()} total batches`
             : 'All platform batches'}
         </p>
@@ -110,6 +110,7 @@ function LoadingState() {
   return (
     <div className="flex flex-col gap-2">
       {Array.from({ length: 8 }).map((_, i) => (
+        // eslint-disable-next-line react/no-array-index-key
         <BatchRowSkeleton key={i} />
       ))}
     </div>
@@ -161,9 +162,9 @@ function PaginationControls({
     <div className="mt-4 flex items-center justify-between border-t pt-4">
       <p className="text-muted-foreground text-sm">
         Page {currentPage} of {totalPages}
-        {total && (
+        {total ? (
           <span className="ml-1">({total.toLocaleString()} total)</span>
-        )}
+        ) : null}
       </p>
       <div className="flex gap-2">
         <Button

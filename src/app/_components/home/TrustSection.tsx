@@ -198,7 +198,7 @@ export function TrustSection() {
             { icon: '✓', label: 'GDPR Compliant' },
           ].map((badge, idx) => (
             <motion.div
-              key={idx}
+              key={badge.label}
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}

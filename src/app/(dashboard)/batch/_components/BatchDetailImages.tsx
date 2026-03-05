@@ -35,15 +35,15 @@ export function BatchDetailImages({
   return (
     <>
       {/* Expired notice */}
-      {isExpired && (
+      {isExpired ? (
         <div className="text-muted-foreground flex items-center gap-2 rounded-lg border px-4 py-3 text-sm">
           <AlertCircle className="h-4 w-4 shrink-0" />
           Image results have expired and are no longer available for download.
         </div>
-      )}
+      ) : null}
 
       {/* In-progress images */}
-      {isProcessing && pendingImages.length > 0 && (
+      {isProcessing && pendingImages.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             In Progress ({pendingImages.length})
@@ -68,23 +68,25 @@ export function BatchDetailImages({
             ))}
           </div>
         </section>
-      )}
+      ) : null}
 
       {/* Completed images */}
       {!isExpired && completedImages.length > 0 && (
         <section className="space-y-3">
-          {(failedImages.length > 0 || isProcessing) && (
+          {failedImages.length > 0 || isProcessing ? (
             <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
               Completed ({completedImages.length})
             </h2>
-          )}
+          ) : null}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {completedImages.map(img => (
               <BatchImageTile
                 key={img.image_id}
                 image={img}
                 onRetry={() => onRetry(img.image_id)}
-                isRetrying={isRetrying && retryingImageId === img.image_id}
+                isRetrying={
+                  isRetrying ? retryingImageId === img.image_id : false
+                }
               />
             ))}
           </div>
@@ -116,7 +118,9 @@ export function BatchDetailImages({
                 key={img.image_id}
                 image={img}
                 onRetry={() => onRetry(img.image_id)}
-                isRetrying={isRetrying && retryingImageId === img.image_id}
+                isRetrying={
+                  isRetrying ? retryingImageId === img.image_id : false
+                }
               />
             ))}
           </div>
@@ -124,7 +128,7 @@ export function BatchDetailImages({
       )}
 
       {/* Expired placeholder grid */}
-      {isExpired && batch.images.length > 0 && (
+      {isExpired && batch.images.length > 0 ? (
         <section className="space-y-3">
           <h2 className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
             Images ({batch.images.length})
@@ -151,7 +155,7 @@ export function BatchDetailImages({
             ))}
           </div>
         </section>
-      )}
+      ) : null}
     </>
   );
 }

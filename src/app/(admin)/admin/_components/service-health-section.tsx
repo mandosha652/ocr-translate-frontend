@@ -92,11 +92,11 @@ export function ServiceHealthSection() {
             No data — click refresh
           </p>
         )}
-        {health && (
+        {health ? (
           <p className="text-muted-foreground pt-1 text-xs">
             Checked {format(new Date(health.checked_at), 'HH:mm:ss')} UTC
           </p>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

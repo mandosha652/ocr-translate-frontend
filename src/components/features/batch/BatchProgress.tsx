@@ -132,7 +132,7 @@ export function BatchProgress({
 
       <ImageStatusList images={images} />
 
-      {isProcessing && (
+      {isProcessing ? (
         <Button
           variant="destructive"
           className="w-full"
@@ -148,14 +148,14 @@ export function BatchProgress({
             'Cancel Batch'
           )}
         </Button>
-      )}
+      ) : null}
 
-      {isFinished && (
+      {isFinished ? (
         <p className="text-muted-foreground text-center text-sm">
           Batch{' '}
           {status === 'cancelled' ? 'was cancelled' : 'processing finished'}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }

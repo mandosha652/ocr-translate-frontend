@@ -1,12 +1,12 @@
-import { UseFormRegister } from 'react-hook-form';
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { type ResetPasswordFormData } from '@/lib/validators';
+import type { ResetPasswordFormData } from '@/lib/validators';
 
 interface ResetPasswordFormFieldsProps {
   register: UseFormRegister<ResetPasswordFormData>;
-  errors: Record<string, any>;
+  errors: FieldErrors<ResetPasswordFormData>;
 }
 
 export function ResetPasswordFormFields({
@@ -23,11 +23,11 @@ export function ResetPasswordFormFields({
           autoComplete="new-password"
           {...register('new_password')}
         />
-        {errors.new_password && (
+        {errors.new_password ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.new_password.message}
           </p>
-        )}
+        ) : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirmPassword">Confirm new password</Label>
@@ -37,11 +37,11 @@ export function ResetPasswordFormFields({
           autoComplete="new-password"
           {...register('confirmPassword')}
         />
-        {errors.confirmPassword && (
+        {errors.confirmPassword ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.confirmPassword.message}
           </p>
-        )}
+        ) : null}
       </div>
     </>
   );

@@ -53,9 +53,9 @@ export function MobileNav({
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-0.5">
-                {user?.name && (
+                {user?.name ? (
                   <p className="text-sm font-medium">{user.name}</p>
-                )}
+                ) : null}
                 <p className="text-muted-foreground text-xs">{user?.email}</p>
               </div>
             </div>

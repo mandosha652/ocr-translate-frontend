@@ -3,7 +3,7 @@
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Bell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -26,11 +26,7 @@ const TYPE_COLORS = {
 export function NotificationBell() {
   const router = useRouter();
   const { notifications, markAllRead, markRead } = useNotificationStore();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted] = useState(() => typeof window !== 'undefined');
 
   const unreadCount = mounted ? notifications.filter(n => !n.read).length : 0;
   const recent = mounted ? notifications.slice(0, 5) : [];

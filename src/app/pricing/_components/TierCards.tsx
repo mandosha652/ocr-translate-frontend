@@ -35,11 +35,11 @@ export function TierCards({ tiers }: TierCardsProps) {
             }`}
           >
             {/* Popular badge */}
-            {isPopular && (
+            {isPopular ? (
               <div className="bg-primary text-primary-foreground absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-4 py-1 text-xs font-semibold">
                 Most popular
               </div>
-            )}
+            ) : null}
 
             <div className="flex h-full flex-col p-8">
               {/* Header */}
@@ -53,23 +53,23 @@ export function TierCards({ tiers }: TierCardsProps) {
               </div>
 
               {/* Price */}
-              {tier.price && (
+              {tier.price ? (
                 <div className="mb-8">
                   <div className="flex items-baseline gap-2">
                     <span className="text-foreground text-4xl font-bold">
                       {tier.price}
                     </span>
-                    {tier.billingPeriod && (
+                    {tier.billingPeriod ? (
                       <span className="text-muted-foreground text-sm">
                         {tier.billingPeriod}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 </div>
-              )}
+              ) : null}
 
               {/* CTA */}
-              {tier.cta && (
+              {tier.cta ? (
                 <button
                   className={`mb-8 w-full rounded-lg py-3 font-semibold transition-all duration-300 ${
                     isPopular
@@ -79,7 +79,7 @@ export function TierCards({ tiers }: TierCardsProps) {
                 >
                   {tier.cta}
                 </button>
-              )}
+              ) : null}
 
               {/* Features */}
               <div className="flex-1 space-y-3">

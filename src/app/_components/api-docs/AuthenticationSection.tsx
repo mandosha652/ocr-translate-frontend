@@ -20,7 +20,7 @@ export function AuthenticationSection() {
         </code>{' '}
         header:
       </p>
-      <CodeBlock>{`Authorization: Bearer YOUR_API_KEY`}</CodeBlock>
+      <CodeBlock>Authorization: Bearer YOUR_API_KEY</CodeBlock>
     </section>
   );
 }

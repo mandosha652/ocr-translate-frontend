@@ -104,7 +104,7 @@ export function HeroSection() {
               { value: '<10s', label: 'Per image' },
             ].map((stat, idx) => (
               <motion.div
-                key={idx}
+                key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}

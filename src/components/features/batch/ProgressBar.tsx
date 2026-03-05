@@ -23,9 +23,9 @@ export function ProgressBar({
         <span className="text-muted-foreground font-medium">
           {completedCount} completed · {failedCount} failed ·{' '}
           {totalImages - completedCount - failedCount} remaining
-          {estimatedTimeRemaining && (
+          {estimatedTimeRemaining ? (
             <span className="ml-2">· {estimatedTimeRemaining}</span>
-          )}
+          ) : null}
         </span>
         <span className="font-semibold">{progressValue}%</span>
       </div>

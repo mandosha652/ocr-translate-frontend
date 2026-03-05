@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { QuotaBanner } from '@/components/features/upgrade/QuotaBanner';
@@ -36,15 +36,14 @@ export default function TranslatePage() {
   const jobStatus = jobQuery.data?.status;
   const outputUrl = jobQuery.data?.output_url ?? null;
 
-  useEffect(() => {
-    if (pageState !== 'polling') return;
+  if (pageState === 'polling') {
     if (jobStatus === 'completed' && outputUrl) {
       setPageState('done');
     } else if (jobStatus === 'failed') {
       setPageState('error');
       setErrorMessage(jobQuery.data?.error ?? 'Translation failed');
     }
-  }, [pageState, jobStatus, outputUrl, jobQuery.data?.error]);
+  }
 
   const isBusy = pageState === 'submitting' || pageState === 'polling';
 
@@ -128,7 +127,7 @@ export default function TranslatePage() {
         onClose={() => setUpgradeOpen(false)}
         reason="You've reached your monthly translation limit. Upgrade to Pro for more."
       />
-      {usageStats?.quota && <QuotaBanner quota={usageStats.quota} />}
+      {usageStats?.quota ? <QuotaBanner quota={usageStats.quota} /> : null}
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Translate Image</h1>
         <p className="text-muted-foreground mt-2 text-sm sm:text-base">

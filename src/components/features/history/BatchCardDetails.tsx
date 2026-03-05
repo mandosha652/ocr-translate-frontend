@@ -22,11 +22,11 @@ export function BatchCardDetails({ batch, batchId }: BatchCardDetailsProps) {
 
   return (
     <>
-      {isExpired && (
+      {isExpired ? (
         <p className="text-muted-foreground text-sm">
           Image results have expired and are no longer available for download.
         </p>
-      )}
+      ) : null}
       {!isExpired && completedImages.length > 0 && (
         <div className="space-y-3">
           {failedImages.length > 0 && (
@@ -46,8 +46,9 @@ export function BatchCardDetails({ batch, batchId }: BatchCardDetailsProps) {
                   })
                 }
                 isRetrying={
-                  retryImage.isPending &&
-                  retryImage.variables?.imageId === img.image_id
+                  retryImage.isPending
+                    ? retryImage.variables?.imageId === img.image_id
+                    : false
                 }
               />
             ))}
@@ -92,8 +93,9 @@ export function BatchCardDetails({ batch, batchId }: BatchCardDetailsProps) {
                   })
                 }
                 isRetrying={
-                  retryImage.isPending &&
-                  retryImage.variables?.imageId === img.image_id
+                  retryImage.isPending
+                    ? retryImage.variables?.imageId === img.image_id
+                    : false
                 }
               />
             ))}

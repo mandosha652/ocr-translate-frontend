@@ -2,7 +2,7 @@
 
 import { ImageIcon, Key, Layers, Zap } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import type { User } from '@/types';
@@ -60,15 +60,11 @@ interface Props {
 
 export function WelcomeModal({ user }: Props) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !localStorage.getItem(WELCOME_MODAL_KEY);
+  });
   const [slide, setSlide] = useState(0);
-
-  useEffect(() => {
-    const shown = localStorage.getItem(WELCOME_MODAL_KEY);
-    if (!shown) {
-      setOpen(true);
-    }
-  }, []);
 
   function dismiss() {
     localStorage.setItem(WELCOME_MODAL_KEY, 'true');
@@ -113,9 +109,9 @@ export function WelcomeModal({ user }: Props) {
         </DialogHeader>
 
         <div className="flex items-center justify-center gap-1.5 py-2">
-          {SLIDES.map((_, i) => (
+          {SLIDES.map((s, i) => (
             <button
-              key={i}
+              key={s.title}
               onClick={() => setSlide(i)}
               className={`h-1.5 rounded-full transition-all duration-200 ${
                 i === slide ? 'bg-primary w-4' : 'bg-muted-foreground/30 w-1.5'

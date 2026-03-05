@@ -60,7 +60,7 @@ export function BatchDetailHeader({
         </p>
       </div>
       <div className="flex shrink-0 flex-wrap items-center gap-2">
-        {canCancel && (
+        {canCancel ? (
           <Button
             variant="outline"
             size="sm"
@@ -71,8 +71,8 @@ export function BatchDetailHeader({
             <XCircle className="h-3.5 w-3.5" />
             {isPendingCancel ? 'Cancelling...' : 'Cancel'}
           </Button>
-        )}
-        {canRetry && (
+        ) : null}
+        {canRetry ? (
           <Button
             variant="outline"
             size="sm"
@@ -83,7 +83,7 @@ export function BatchDetailHeader({
             <RotateCcw className="h-3.5 w-3.5" />
             {isPendingRetry ? 'Queuing...' : 'Retry'}
           </Button>
-        )}
+        ) : null}
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button

@@ -112,7 +112,7 @@ export function AdminNav() {
       </div>
 
       {/* Mobile nav */}
-      {mobileOpen && (
+      {mobileOpen ? (
         <div className="animate-in slide-in-from-top-2 border-t duration-200 md:hidden">
           <nav className="container mx-auto max-w-7xl space-y-1 px-4 py-3">
             {navItems.map(item => {
@@ -152,7 +152,7 @@ export function AdminNav() {
             </Button>
           </nav>
         </div>
-      )}
+      ) : null}
     </header>
   );
 }

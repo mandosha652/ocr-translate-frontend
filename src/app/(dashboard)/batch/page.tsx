@@ -52,7 +52,7 @@ export default function BatchPage() {
         onClose={() => setUpgradeOpen(false)}
         reason="You've reached your monthly batch limit. Upgrade to Pro for more."
       />
-      {usageStats?.quota && <QuotaBanner quota={usageStats.quota} />}
+      {usageStats?.quota ? <QuotaBanner quota={usageStats.quota} /> : null}
       <div>
         <h1 className="text-2xl font-bold sm:text-3xl">Batch Translation</h1>
         <p className="text-muted-foreground mt-1 text-sm sm:text-base">

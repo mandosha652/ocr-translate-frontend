@@ -21,7 +21,7 @@ export function KeyNameEditor({ apiKey, isRenaming }: KeyNameEditorProps) {
     return (
       <div className="flex items-center gap-1">
         <p className="font-medium">{apiKey.name}</p>
-        {apiKey.is_active && (
+        {apiKey.is_active ? (
           <Button
             variant="ghost"
             size="icon"
@@ -37,7 +37,7 @@ export function KeyNameEditor({ apiKey, isRenaming }: KeyNameEditorProps) {
           >
             <Pencil className="h-3 w-3" />
           </Button>
-        )}
+        ) : null}
       </div>
     );
   }

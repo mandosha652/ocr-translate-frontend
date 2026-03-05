@@ -39,19 +39,21 @@ export function StatCard({
             >
               {Number(value).toLocaleString()}
             </p>
-            {(sub || trend) && (
+            {sub || trend ? (
               <div className="mt-1 flex items-center gap-2">
-                {sub && <p className="text-muted-foreground text-xs">{sub}</p>}
-                {trend && (
+                {sub ? (
+                  <p className="text-muted-foreground text-xs">{sub}</p>
+                ) : null}
+                {trend ? (
                   <span
                     className={`text-xs font-medium ${trend.value > 0 ? 'text-emerald-600' : trend.value < 0 ? 'text-red-500' : 'text-muted-foreground'}`}
                   >
                     {trend.value > 0 ? '↑' : trend.value < 0 ? '↓' : '–'}{' '}
                     {trend.label}
                   </span>
-                )}
+                ) : null}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </CardContent>

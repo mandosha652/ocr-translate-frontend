@@ -1,14 +1,14 @@
 import Link from 'next/link';
-import { UseFormRegister } from 'react-hook-form';
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { type LoginFormData } from '@/lib/validators';
+import type { LoginFormData } from '@/lib/validators';
 
 interface LoginFormFieldsProps {
   register: UseFormRegister<LoginFormData>;
-  errors: Record<string, any>;
+  errors: FieldErrors<LoginFormData>;
   isLoggingIn: boolean;
 }
 
@@ -28,11 +28,11 @@ export function LoginFormFields({
           autoComplete="email"
           {...register('email')}
         />
-        {errors.email && (
+        {errors.email ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.email.message}
           </p>
-        )}
+        ) : null}
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -52,11 +52,11 @@ export function LoginFormFields({
           autoComplete="current-password"
           {...register('password')}
         />
-        {errors.password && (
+        {errors.password ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.password.message}
           </p>
-        )}
+        ) : null}
       </div>
     </>
   );

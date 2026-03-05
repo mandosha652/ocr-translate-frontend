@@ -24,12 +24,13 @@ export function ImagePreviewDialog({
         <DialogHeader className="space-y-2">
           <DialogTitle>{previewImage?.file.name}</DialogTitle>
           <p className="text-muted-foreground text-sm">
-            {previewImage &&
-              `${(previewImage.file.size / 1024 / 1024).toFixed(2)} MB`}
+            {previewImage
+              ? `${(previewImage.file.size / 1024 / 1024).toFixed(2)} MB`
+              : null}
           </p>
         </DialogHeader>
         <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-          {previewImage && (
+          {previewImage ? (
             <Image
               src={previewImage.preview}
               alt={previewImage.file.name}
@@ -37,7 +38,7 @@ export function ImagePreviewDialog({
               className="object-contain"
               unoptimized
             />
-          )}
+          ) : null}
         </div>
       </DialogContent>
     </Dialog>

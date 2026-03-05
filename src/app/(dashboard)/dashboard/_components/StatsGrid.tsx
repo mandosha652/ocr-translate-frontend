@@ -23,6 +23,80 @@ function StatSkeleton() {
   return <div className="bg-muted h-9 w-16 animate-pulse rounded-md" />;
 }
 
+function StatValue({
+  isLoading,
+  isError,
+  children,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  children: React.ReactNode;
+}) {
+  if (isLoading) return <StatSkeleton />;
+  if (isError) {
+    return <CardTitle className="text-muted-foreground text-3xl">—</CardTitle>;
+  }
+  return <>{children}</>;
+}
+
+function ThisMonthCard({
+  isLoading,
+  isError,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  return (
+    <Card className="transition-shadow duration-200 hover:shadow-md">
+      <CardHeader className="pb-2">
+        <CardDescription>This Month</CardDescription>
+        <StatValue isLoading={isLoading} isError={isError}>
+          <CardTitle className="text-muted-foreground text-3xl">—</CardTitle>
+        </StatValue>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground text-sm">images processed</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AllTimeCard({
+  usage,
+  isLoading,
+  isError,
+}: {
+  usage: UsageStatsResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+}) {
+  return (
+    <Card className="transition-shadow duration-200 hover:shadow-md">
+      <CardHeader className="pb-2">
+        <CardDescription className="flex items-center gap-1">
+          <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> All Time
+        </CardDescription>
+        <StatValue isLoading={isLoading} isError={isError}>
+          <CardTitle className="text-3xl">
+            {usage?.all_time.translations_count ?? 0}
+          </CardTitle>
+        </StatValue>
+      </CardHeader>
+      <CardContent>
+        <p className="text-muted-foreground text-sm">total translations</p>
+        {!isLoading &&
+          !isError &&
+          (usage?.all_time.images_processed ?? 0) > 0 && (
+            <p className="text-muted-foreground mt-1 text-xs">
+              {usage?.all_time.images_processed} images,{' '}
+              {usage?.all_time.batches_run} batches
+            </p>
+          )}
+      </CardContent>
+    </Card>
+  );
+}
+
 interface StatsGridProps {
   usage: UsageStatsResponse | undefined;
   isLoading: boolean;
@@ -78,58 +152,16 @@ export function StatsGrid({
         </CardContent>
       </Card>
 
-      {!isNewUser && !isLoading && !isError && usage && (
+      {!isNewUser && !isLoading && !isError && usage ? (
         <UsageChart usage={usage} />
-      )}
+      ) : null}
 
-      {!isNewUser && (isLoading || isError) && (
-        <Card className="transition-shadow duration-200 hover:shadow-md">
-          <CardHeader className="pb-2">
-            <CardDescription>This Month</CardDescription>
-            {isLoading ? (
-              <StatSkeleton />
-            ) : (
-              <CardTitle className="text-muted-foreground text-3xl">
-                —
-              </CardTitle>
-            )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">images processed</p>
-          </CardContent>
-        </Card>
-      )}
+      {!isNewUser && (isLoading || isError) ? (
+        <ThisMonthCard isLoading={isLoading} isError={isError} />
+      ) : null}
 
       {!isNewUser && (
-        <Card className="transition-shadow duration-200 hover:shadow-md">
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" /> All Time
-            </CardDescription>
-            {isLoading ? (
-              <StatSkeleton />
-            ) : isError ? (
-              <CardTitle className="text-muted-foreground text-3xl">
-                —
-              </CardTitle>
-            ) : (
-              <CardTitle className="text-3xl">
-                {usage?.all_time.translations_count ?? 0}
-              </CardTitle>
-            )}
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground text-sm">total translations</p>
-            {!isLoading &&
-              !isError &&
-              (usage?.all_time.images_processed ?? 0) > 0 && (
-                <p className="text-muted-foreground mt-1 text-xs">
-                  {usage?.all_time.images_processed} images,{' '}
-                  {usage?.all_time.batches_run} batches
-                </p>
-              )}
-          </CardContent>
-        </Card>
+        <AllTimeCard usage={usage} isLoading={isLoading} isError={isError} />
       )}
     </div>
   );

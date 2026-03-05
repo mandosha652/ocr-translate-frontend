@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAdminCostDaily } from '@/hooks';
 
 function fmt(val: number | null | undefined): string {
-  if (val == null) return '—';
+  if (val === null || val === undefined) return '—';
   return `$${val.toFixed(4)}`;
 }
 

@@ -62,7 +62,7 @@ export function ImageStatusList({ images }: ImageStatusListProps) {
                   </span>
                 )}
               </div>
-              {image.error && (
+              {image.error ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className="text-destructive ml-2 cursor-default truncate text-xs">
@@ -71,7 +71,7 @@ export function ImageStatusList({ images }: ImageStatusListProps) {
                   </TooltipTrigger>
                   <TooltipContent>{image.error}</TooltipContent>
                 </Tooltip>
-              )}
+              ) : null}
             </div>
           );
         })}

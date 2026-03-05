@@ -49,11 +49,11 @@ function PasswordField({
         disabled={disabled}
         {...register}
       />
-      {error && (
+      {error ? (
         <p role="alert" className="text-destructive text-sm">
           {error}
         </p>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -130,9 +130,9 @@ export function ChangePasswordCard() {
             register={register('confirmPassword')}
           />
           <Button type="submit" disabled={changePassword.isPending}>
-            {changePassword.isPending && (
+            {changePassword.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
+            ) : null}
             Update password
           </Button>
         </form>

@@ -88,9 +88,9 @@ export function DangerZoneCard() {
                   onClick={() => deleteAccountMutation.mutate()}
                   disabled={deleteAccountMutation.isPending}
                 >
-                  {deleteAccountMutation.isPending && (
+                  {deleteAccountMutation.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  )}
+                  ) : null}
                   Delete My Account
                 </Button>
               </DialogFooter>

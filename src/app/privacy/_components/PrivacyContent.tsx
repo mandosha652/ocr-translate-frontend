@@ -95,16 +95,16 @@ export function PrivacyContent() {
           {'content' in section && (
             <p className="text-muted-foreground">{section.content}</p>
           )}
-          {'bullets' in section && section.bullets && (
+          {'bullets' in section && section.bullets ? (
             <ul className="text-muted-foreground list-disc space-y-1 pl-6">
-              {section.bullets.map((bullet, i) => (
-                <li key={i}>
+              {section.bullets.map(bullet => (
+                <li key={bullet.text}>
                   {'bold' in bullet && <strong>{bullet.bold}</strong>}{' '}
                   {bullet.text}
                 </li>
               ))}
             </ul>
-          )}
+          ) : null}
           {'footer' in section && (
             <p className="text-muted-foreground">{section.footer}</p>
           )}

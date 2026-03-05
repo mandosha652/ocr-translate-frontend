@@ -1,4 +1,4 @@
-import { type LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
@@ -29,18 +29,18 @@ export function EmptyState({
         className
       )}
     >
-      {Icon && (
+      {Icon ? (
         <div className="bg-muted mb-4 flex h-12 w-12 items-center justify-center rounded-full">
           <Icon className="text-muted-foreground h-5 w-5" />
         </div>
-      )}
+      ) : null}
       <p className="font-medium">{title}</p>
-      {description && (
+      {description ? (
         <p className="text-muted-foreground mt-1 max-w-xs text-sm">
           {description}
         </p>
-      )}
-      {actions && <div className="mt-6 flex gap-3">{actions}</div>}
+      ) : null}
+      {actions ? <div className="mt-6 flex gap-3">{actions}</div> : null}
     </div>
   );
 }

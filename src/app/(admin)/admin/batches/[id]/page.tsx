@@ -45,6 +45,7 @@ export default function AdminBatchDetailPage() {
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
+            // eslint-disable-next-line react/no-array-index-key
             <div key={i} className="bg-muted h-20 animate-pulse rounded-lg" />
           ))}
         </div>

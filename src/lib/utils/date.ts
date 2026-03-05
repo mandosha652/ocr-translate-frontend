@@ -14,8 +14,9 @@ export function formatLastActive(iso: string | null): string {
   if (isToday(date)) return 'Today';
   if (isYesterday(date)) return 'Yesterday';
   const distance = formatDistanceToNowStrict(date, { addSuffix: true });
-  if (!distance.includes('month') && !distance.includes('year'))
+  if (!distance.includes('month') && !distance.includes('year')) {
     return distance;
+  }
   return format(date, 'MMM d, yyyy');
 }
 
@@ -33,7 +34,8 @@ export function formatExpiry(iso: string | null): {
   if (isPast(expiry)) return { label: 'Expired', urgent: true };
   if (isTomorrow(expiry)) return { label: 'Expires tomorrow', urgent: true };
   const daysLeft = differenceInDays(expiry, new Date());
-  if (daysLeft <= 30)
+  if (daysLeft <= 30) {
     return { label: `Expires in ${daysLeft} days`, urgent: daysLeft <= 7 };
+  }
   return { label: `Expires ${format(expiry, 'MMM d, yyyy')}`, urgent: false };
 }

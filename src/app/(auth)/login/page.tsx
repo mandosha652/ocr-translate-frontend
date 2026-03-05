@@ -39,16 +39,18 @@ function LoginForm() {
             />
           </CardContent>
           <CardFooter className="flex flex-col gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6">
-            {loginError && (
+            {loginError ? (
               <p
                 className="text-destructive w-full text-center text-sm"
                 role="alert"
               >
                 {loginError}
               </p>
-            )}
+            ) : null}
             <Button type="submit" className="w-full" disabled={isLoggingIn}>
-              {isLoggingIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoggingIn ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Sign in
             </Button>
             <p className="text-muted-foreground text-center text-xs sm:text-sm">

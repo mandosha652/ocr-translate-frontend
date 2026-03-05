@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth, useUsageStats } from '@/hooks';
 import { formatLastActive } from '@/lib/utils/date';
+import type { UsageStatsResponse } from '@/types';
 
 import { AccountCard } from './_components/AccountCard';
 import { QuickActionCards } from './_components/QuickActionCards';
@@ -28,6 +29,84 @@ function ErrorFallback() {
   );
 }
 
+function UsageErrorCard({ onRetry }: { onRetry: () => void }) {
+  return (
+    <Card className="border-dashed">
+      <CardContent className="flex items-center justify-between py-4">
+        <div className="flex items-center gap-2 text-sm">
+          <AlertTriangle className="text-muted-foreground h-4 w-4 shrink-0" />
+          <span className="text-muted-foreground">
+            Could not load usage stats
+          </span>
+        </div>
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          <RefreshCw className="mr-2 h-3.5 w-3.5" />
+          Retry
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LastActiveCard({
+  usage,
+  isLoading,
+}: {
+  usage: UsageStatsResponse | undefined;
+  isLoading: boolean;
+}) {
+  return (
+    <Card className="transition-shadow duration-200 hover:shadow-md">
+      <CardContent className="pt-6">
+        <div className="flex items-center gap-1">
+          <Clock className="text-muted-foreground h-3.5 w-3.5" />
+          <p className="text-muted-foreground text-xs">Last Active</p>
+        </div>
+        <p className="mt-2 text-lg font-bold">
+          {isLoading ? '—' : formatLastActive(usage?.last_activity ?? null)}
+        </p>
+        <p className="text-muted-foreground text-sm">most recent job</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DashboardInsights({
+  usage,
+  isLoading,
+  isError,
+  isNewUser,
+  onRetry,
+}: {
+  usage: UsageStatsResponse | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  isNewUser: boolean;
+  onRetry: () => void;
+}) {
+  const shouldShowLanguages =
+    !isNewUser &&
+    !isError &&
+    (isLoading || (usage?.most_used_languages.length ?? 0) > 0);
+
+  return (
+    <>
+      {isError ? <UsageErrorCard onRetry={onRetry} /> : null}
+
+      {!isNewUser && !isError && (
+        <LastActiveCard usage={usage} isLoading={isLoading} />
+      )}
+
+      {shouldShowLanguages ? (
+        <TopLanguagesCard
+          languages={usage?.most_used_languages ?? []}
+          isLoading={isLoading}
+        />
+      ) : null}
+    </>
+  );
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const { data: usage, isLoading, isError, refetch } = useUsageStats();
@@ -35,21 +114,16 @@ export default function DashboardPage() {
   const isNewUser =
     !isLoading && !isError && (usage?.all_time.translations_count ?? 0) === 0;
 
-  const shouldShowLanguages =
-    !isNewUser &&
-    !isError &&
-    (isLoading || (usage?.most_used_languages.length ?? 0) > 0);
-
   return (
     <ErrorBoundary fallback={<ErrorFallback />}>
       <div className="space-y-8">
-        {!isLoading && user && <WelcomeModal user={user} />}
+        {!isLoading && user ? <WelcomeModal user={user} /> : null}
 
         <WelcomeHeader user={user} isNewUser={isNewUser} />
 
-        {!isLoading && !isError && usage && (
+        {!isLoading && !isError && usage ? (
           <OnboardingChecklist usage={usage} />
-        )}
+        ) : null}
 
         <StatsGrid
           usage={usage}
@@ -58,46 +132,13 @@ export default function DashboardPage() {
           isNewUser={isNewUser}
         />
 
-        {isError && (
-          <Card className="border-dashed">
-            <CardContent className="flex items-center justify-between py-4">
-              <div className="flex items-center gap-2 text-sm">
-                <AlertTriangle className="text-muted-foreground h-4 w-4 shrink-0" />
-                <span className="text-muted-foreground">
-                  Could not load usage stats
-                </span>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                <RefreshCw className="mr-2 h-3.5 w-3.5" />
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {!isNewUser && !isError && (
-          <Card className="transition-shadow duration-200 hover:shadow-md">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-1">
-                <Clock className="text-muted-foreground h-3.5 w-3.5" />
-                <p className="text-muted-foreground text-xs">Last Active</p>
-              </div>
-              <p className="mt-2 text-lg font-bold">
-                {isLoading
-                  ? '—'
-                  : formatLastActive(usage?.last_activity ?? null)}
-              </p>
-              <p className="text-muted-foreground text-sm">most recent job</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {shouldShowLanguages && (
-          <TopLanguagesCard
-            languages={usage?.most_used_languages ?? []}
-            isLoading={isLoading}
-          />
-        )}
+        <DashboardInsights
+          usage={usage}
+          isLoading={isLoading}
+          isError={isError}
+          isNewUser={isNewUser}
+          onRetry={() => refetch()}
+        />
 
         <div className="grid gap-6 lg:grid-cols-2">
           <QuickActionCards />

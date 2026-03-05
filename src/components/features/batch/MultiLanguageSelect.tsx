@@ -34,7 +34,7 @@ export function MultiLanguageSelect({
 
   return (
     <div className="space-y-3">
-      {label && <Label>{label}</Label>}
+      {label ? <Label>{label}</Label> : null}
 
       {selectedLanguages.length > 0 && (
         <div className="flex flex-wrap gap-2">

@@ -92,9 +92,9 @@ function UsageBar({ value, max, label }: BarProps) {
           />
         </div>
       )}
-      {isUnlimited && (
+      {isUnlimited ? (
         <p className="text-muted-foreground text-xs">Unlimited</p>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -121,13 +121,13 @@ export function UsageChart({ usage }: Props) {
             max={quota ? quota.batches_limit : null}
             label="Batches run"
           />
-          {quota && (
+          {quota ? (
             <UsageBar
               value={quota.translations_used}
               max={quota.translations_limit}
               label="Translations"
             />
-          )}
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-4">

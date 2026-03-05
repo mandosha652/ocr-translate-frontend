@@ -1,4 +1,4 @@
-import { UseFormRegister } from 'react-hook-form';
+import type { FieldErrors, UseFormRegister } from 'react-hook-form';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,7 +7,7 @@ import { getPasswordStrength, type RegisterFormData } from '@/lib/validators';
 
 interface SignupFormFieldsProps {
   register: UseFormRegister<RegisterFormData>;
-  errors: Record<string, any>;
+  errors: FieldErrors<RegisterFormData>;
   passwordValue: string;
   onPasswordChange: (value: string) => void;
 }
@@ -59,11 +59,11 @@ export function SignupFormFields({
           autoComplete="email"
           {...register('email')}
         />
-        {errors.email && (
+        {errors.email ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.email.message}
           </p>
-        )}
+        ) : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
@@ -75,11 +75,11 @@ export function SignupFormFields({
           onChange={e => onPasswordChange(e.target.value)}
         />
         <PasswordStrengthIndicator value={passwordValue} />
-        {errors.password && (
+        {errors.password ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.password.message}
           </p>
-        )}
+        ) : null}
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -89,11 +89,11 @@ export function SignupFormFields({
           autoComplete="new-password"
           {...register('confirmPassword')}
         />
-        {errors.confirmPassword && (
+        {errors.confirmPassword ? (
           <p className="text-destructive text-sm" role="alert">
             {errors.confirmPassword.message}
           </p>
-        )}
+        ) : null}
       </div>
     </>
   );

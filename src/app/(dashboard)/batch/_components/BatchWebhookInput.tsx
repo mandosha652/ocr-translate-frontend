@@ -40,8 +40,8 @@ export function BatchWebhookInput({
         onChange={e => onChange(e.target.value)}
         disabled={disabled}
       />
-      {trimmed &&
-        (valid ? (
+      {trimmed ? (
+        valid ? (
           <p className="text-muted-foreground text-xs">
             POST will be sent when batch finishes
           </p>
@@ -49,7 +49,8 @@ export function BatchWebhookInput({
           <p className="text-destructive text-xs">
             Enter a valid URL (e.g. https://…)
           </p>
-        ))}
+        )
+      ) : null}
     </div>
   );
 }

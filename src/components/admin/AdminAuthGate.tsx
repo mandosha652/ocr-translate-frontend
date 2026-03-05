@@ -82,7 +82,9 @@ export function AdminAuthGate({ onAuthenticated }: AdminAuthGateProps) {
                   )}
                 </Button>
               </div>
-              {error && <p className="text-destructive text-sm">{error}</p>}
+              {error ? (
+                <p className="text-destructive text-sm">{error}</p>
+              ) : null}
             </div>
             <Button type="submit" className="w-full">
               Access Admin Panel

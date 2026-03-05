@@ -112,14 +112,14 @@ export function BatchDetailContent({ batchId }: BatchDetailContentProps) {
         isCancelling={cancelBatch.isPending}
       />
 
-      {isProcessing && (
+      {isProcessing ? (
         <BatchDetailProgress
           completedCount={merged.completed_count}
           failedCount={merged.failed_count}
           totalImages={merged.total_images}
           progressValue={progressValue}
         />
-      )}
+      ) : null}
 
       <BatchDetailImages
         batch={merged}

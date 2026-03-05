@@ -9,7 +9,7 @@ import { useAdminCostByUser, useAdminCostSummary } from '@/hooks';
 type CostPeriod = 'today' | 'week' | 'month' | 'alltime';
 
 function fmtUSD(val: number | null | undefined): string {
-  if (val == null) return '\u2014';
+  if (val === null || val === undefined) return '\u2014';
   return `$${val.toFixed(2)}`;
 }
 
@@ -26,6 +26,7 @@ export function CostSection({ period }: CostSectionProps) {
     return (
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
+          // eslint-disable-next-line react/no-array-index-key
           <div key={i} className="bg-muted h-[72px] animate-pulse rounded-xl" />
         ))}
       </div>
@@ -108,14 +109,15 @@ export function CostSection({ period }: CostSectionProps) {
             )}
             <p className="text-muted-foreground mt-1 text-xs">
               {costSummary.replicate.predictions} predictions
-              {costSummary.replicate.total_seconds != null &&
+              {costSummary.replicate.total_seconds !== null &&
+                costSummary.replicate.total_seconds !== undefined &&
                 ` \u00b7 ${costSummary.replicate.total_seconds.toFixed(1)}s`}
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {userCosts && userCosts.length > 0 && (
+      {userCosts && userCosts.length > 0 ? (
         <Card className="mt-4">
           <CardContent className="pt-5 pb-4">
             <p className="mb-3 text-sm font-medium">
@@ -147,7 +149,7 @@ export function CostSection({ period }: CostSectionProps) {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : null}
     </>
   );
 }

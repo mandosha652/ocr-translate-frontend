@@ -121,7 +121,7 @@ export function BatchRow({ batch }: { batch: AdminBatchSummary }) {
               <ExternalLink className="h-3.5 w-3.5" />
             </Button>
           </Link>
-          {canCancel && (
+          {canCancel ? (
             <Button
               variant="ghost"
               size="icon"
@@ -132,8 +132,8 @@ export function BatchRow({ batch }: { batch: AdminBatchSummary }) {
             >
               <XCircle className="h-3.5 w-3.5" />
             </Button>
-          )}
-          {canRetry && (
+          ) : null}
+          {canRetry ? (
             <Button
               variant="ghost"
               size="icon"
@@ -144,7 +144,7 @@ export function BatchRow({ batch }: { batch: AdminBatchSummary }) {
             >
               <RotateCcw className="h-3.5 w-3.5" />
             </Button>
-          )}
+          ) : null}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button

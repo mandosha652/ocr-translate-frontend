@@ -1,11 +1,11 @@
 import axios, {
-  AxiosError,
-  AxiosInstance,
-  InternalAxiosRequestConfig,
+  type AxiosError,
+  type AxiosInstance,
+  type InternalAxiosRequestConfig,
 } from 'axios';
 
 import { API_BASE_URL } from '@/lib/constants';
-import { AuthTokens } from '@/types';
+import type { AuthTokens } from '@/types';
 
 // Token storage keys
 const ACCESS_TOKEN_KEY = 'access_token';

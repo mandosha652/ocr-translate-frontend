@@ -86,18 +86,16 @@ export function AccountInfoCard({ user, isLoadingUser }: AccountInfoCardProps) {
                 onCancel={() => setIsEditing(false)}
               />
             ) : (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <p className="text-sm">{user?.email}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Name</Label>
-                    <p className="text-sm">{user?.name}</p>
-                  </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <p className="text-sm">{user?.email}</p>
                 </div>
-              </>
+                <div className="space-y-2">
+                  <Label>Name</Label>
+                  <p className="text-sm">{user?.name}</p>
+                </div>
+              </div>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
@@ -114,13 +112,13 @@ export function AccountInfoCard({ user, isLoadingUser }: AccountInfoCardProps) {
                   <Badge variant={user?.is_active ? 'default' : 'destructive'}>
                     {user?.is_active ? 'Active' : 'Inactive'}
                   </Badge>
-                  {user?.is_verified && (
+                  {user?.is_verified ? (
                     <Badge variant="outline">Verified</Badge>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
-            {user?.created_at && (
+            {user?.created_at ? (
               <div className="space-y-2">
                 <Label>Member Since</Label>
                 <p className="text-sm">
@@ -134,7 +132,7 @@ export function AccountInfoCard({ user, isLoadingUser }: AccountInfoCardProps) {
                   </span>
                 </p>
               </div>
-            )}
+            ) : null}
           </>
         )}
       </CardContent>

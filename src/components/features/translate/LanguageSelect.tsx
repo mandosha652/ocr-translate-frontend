@@ -29,13 +29,13 @@ export function LanguageSelect({
 }: LanguageSelectProps) {
   return (
     <div className="space-y-2">
-      {label && <Label>{label}</Label>}
+      {label ? <Label>{label}</Label> : null}
       <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {showAuto && <SelectItem value="auto">Auto-detect</SelectItem>}
+          {showAuto ? <SelectItem value="auto">Auto-detect</SelectItem> : null}
           {SUPPORTED_LANGUAGES.map(lang => (
             <SelectItem key={lang.code} value={lang.code}>
               {lang.name}

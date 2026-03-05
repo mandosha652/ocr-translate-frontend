@@ -269,7 +269,7 @@ export function UserActionsPanel({
           />
         </button>
 
-        {dangerOpen && (
+        {dangerOpen ? (
           <div className="border-destructive/20 bg-destructive/5 mt-2 space-y-2 rounded-lg border p-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -339,7 +339,7 @@ export function UserActionsPanel({
               </AlertDialogContent>
             </AlertDialog>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );

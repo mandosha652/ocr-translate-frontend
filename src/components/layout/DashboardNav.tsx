@@ -120,7 +120,7 @@ export function DashboardNav() {
         </div>
       </div>
 
-      {mobileMenuOpen && (
+      {mobileMenuOpen ? (
         <MobileNav
           navItems={navItems}
           pathname={pathname}
@@ -129,7 +129,7 @@ export function DashboardNav() {
           onClose={() => setMobileMenuOpen(false)}
           onLogout={() => setLogoutDialogOpen(true)}
         />
-      )}
+      ) : null}
 
       <LogoutDialog
         open={logoutDialogOpen}

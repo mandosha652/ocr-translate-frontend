@@ -7,6 +7,7 @@ import { getLangName } from '@/components/features/history/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useListBatches, useTranslationHistory } from '@/hooks';
 import { downloadHistoryJSON } from '@/lib/utils/blob';
+import type { BatchStatusResponse } from '@/types/batch';
 
 import { BatchHistoryTab } from './_components/BatchHistoryTab';
 import { HistoryEmptyState } from './_components/HistoryEmptyState';
@@ -39,7 +40,8 @@ export default function HistoryPage() {
   const finishedBatches = useMemo(
     () =>
       (batches ?? []).filter(
-        (b: any) => b.status !== 'pending' && b.status !== 'processing'
+        (b: BatchStatusResponse) =>
+          b.status !== 'pending' && b.status !== 'processing'
       ),
     [batches]
   );
@@ -58,8 +60,8 @@ export default function HistoryPage() {
   const filteredBatches = useMemo(() => {
     if (!searchQuery.trim()) return finishedBatches;
     const q = searchQuery.toLowerCase();
-    return finishedBatches.filter((b: any) =>
-      b.target_languages.some((l: any) =>
+    return finishedBatches.filter((b: BatchStatusResponse) =>
+      b.target_languages.some((l: string) =>
         getLangName(l).toLowerCase().includes(q)
       )
     );
@@ -92,7 +94,7 @@ export default function HistoryPage() {
         onExportJSON={handleExportJSON}
       />
 
-      {isSingleError && (
+      {isSingleError ? (
         <div className="border-destructive/30 bg-destructive/5 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm">
           <XCircle className="text-destructive h-4 w-4 shrink-0" />
           <span>Couldn&apos;t load your history — try refreshing</span>
@@ -103,9 +105,9 @@ export default function HistoryPage() {
             Retry
           </button>
         </div>
-      )}
+      ) : null}
 
-      {isEmpty && <HistoryEmptyState />}
+      {isEmpty ? <HistoryEmptyState /> : null}
 
       {!isEmpty && (
         <Tabs
@@ -117,11 +119,11 @@ export default function HistoryPage() {
             <TabsList>
               <TabsTrigger value="single">
                 Single
-                {singleHistory && (
+                {singleHistory ? (
                   <span className="text-muted-foreground ml-1.5 text-xs">
                     ({singleHistory.total})
                   </span>
-                )}
+                ) : null}
               </TabsTrigger>
               <TabsTrigger value="batch">
                 Batch

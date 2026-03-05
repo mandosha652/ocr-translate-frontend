@@ -41,7 +41,7 @@ export function WelcomeSlide({
         <div className="bg-primary/10 flex h-12 w-12 items-center justify-center rounded-full">
           <Icon className="text-primary h-6 w-6" />
         </div>
-        {badge && <Badge variant="secondary">{badge}</Badge>}
+        {badge ? <Badge variant="secondary">{badge}</Badge> : null}
       </div>
       <DialogTitle className="text-xl">
         {slide === 0 ? `Welcome${userName ? `, ${userName}` : ''}!` : title}
@@ -55,12 +55,12 @@ export function WelcomeSlide({
           Skip tour
         </Button>
         <div className="flex gap-2">
-          {href && (
+          {href ? (
             <Button variant="outline" size="sm" onClick={() => onCta(href)}>
               {cta}
               <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
-          )}
+          ) : null}
           <Button size="sm" onClick={onNext}>
             {isLast ? 'Get started' : 'Next'}
             {!isLast && <ChevronRight className="ml-1 h-3.5 w-3.5" />}

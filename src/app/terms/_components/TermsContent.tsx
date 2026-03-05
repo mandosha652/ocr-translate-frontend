@@ -54,13 +54,13 @@ export function TermsContent() {
         <section key={section.title} className="space-y-3">
           <h2 className="text-xl font-semibold">{section.title}</h2>
           <p className="text-muted-foreground">{section.content}</p>
-          {'bullets' in section && section.bullets && (
+          {'bullets' in section && section.bullets ? (
             <ul className="text-muted-foreground list-disc space-y-1 pl-6">
-              {section.bullets.map((bullet, i) => (
-                <li key={i}>{bullet}</li>
+              {section.bullets.map(bullet => (
+                <li key={bullet}>{bullet}</li>
               ))}
             </ul>
-          )}
+          ) : null}
         </section>
       ))}
     </div>

@@ -25,7 +25,7 @@ export function UserPagination({
     <div className="mt-4 flex items-center justify-between border-t pt-4">
       <p className="text-muted-foreground text-sm">
         Page {currentPage} of {totalPages}
-        {totalUsers != null && (
+        {totalUsers !== null && totalUsers !== undefined && (
           <span className="ml-1">({totalUsers.toLocaleString()} total)</span>
         )}
       </p>

@@ -2,8 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { AdminUsersParams } from '@/lib/api/admin';
-import { adminApi } from '@/lib/api/admin';
+import { adminApi, type AdminUsersParams } from '@/lib/api/admin';
 import type { AdminCreateUser, AdminUpdateUser } from '@/types';
 
 import { adminEnabled } from './adminEnabled';

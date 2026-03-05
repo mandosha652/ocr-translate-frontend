@@ -48,7 +48,9 @@ function ResetPasswordForm() {
           </CardContent>
           <CardFooter className="flex flex-col gap-3 px-4 pt-4 sm:gap-4 sm:px-6 sm:pt-6">
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
               Set new password
             </Button>
             <p className="text-muted-foreground text-center text-xs sm:text-sm">

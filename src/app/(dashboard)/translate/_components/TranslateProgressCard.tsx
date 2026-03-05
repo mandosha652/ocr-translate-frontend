@@ -95,12 +95,12 @@ export function TranslateProgressCard({
                 >
                   {step.label}
                 </span>
-                {isActive && (
+                {isActive ? (
                   <Loader2 className="text-primary ml-auto h-4 w-4 animate-spin" />
-                )}
-                {isDone && (
+                ) : null}
+                {isDone ? (
                   <CheckCircle2 className="text-primary ml-auto h-4 w-4" />
-                )}
+                ) : null}
               </li>
             );
           })}

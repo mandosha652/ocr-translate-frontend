@@ -70,7 +70,7 @@ export function BatchDetailMetadata({
             </div>
           }
         />
-        {webhookUrl && (
+        {webhookUrl ? (
           <InfoRow
             label="Webhook"
             icon={Webhook}
@@ -80,7 +80,7 @@ export function BatchDetailMetadata({
               </span>
             }
           />
-        )}
+        ) : null}
         <InfoRow
           label="Created"
           icon={Calendar}

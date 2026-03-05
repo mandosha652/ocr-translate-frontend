@@ -21,6 +21,7 @@ export function UserListContent({
     return (
       <div className="flex flex-col gap-2">
         {Array.from({ length: 8 }).map((_, i) => (
+          // eslint-disable-next-line react/no-array-index-key
           <UserRowSkeleton key={i} />
         ))}
       </div>

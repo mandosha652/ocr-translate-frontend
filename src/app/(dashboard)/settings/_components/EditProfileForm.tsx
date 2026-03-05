@@ -22,10 +22,12 @@ function getProfileUpdates(
   currentUser: User | null | undefined
 ): { name?: string; email?: string } {
   const updates: { name?: string; email?: string } = {};
-  if (profileName.trim() !== (currentUser?.name ?? ''))
+  if (profileName.trim() !== (currentUser?.name ?? '')) {
     updates.name = profileName.trim();
-  if (profileEmail.trim() !== currentUser?.email)
+  }
+  if (profileEmail.trim() !== currentUser?.email) {
     updates.email = profileEmail.trim();
+  }
   return updates;
 }
 
@@ -81,9 +83,9 @@ export function EditProfileForm({
           onClick={handleSave}
           disabled={updateProfile.isPending}
         >
-          {updateProfile.isPending && (
+          {updateProfile.isPending ? (
             <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-          )}
+          ) : null}
           Save
         </Button>
         <Button

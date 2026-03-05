@@ -139,21 +139,21 @@ export function TranslateFormCard({
             disabled={!canSubmit}
             className="flex-1"
           >
-            {isBusy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             {isBusy ? 'Translating…' : 'Translate'}
           </Button>
-          {isBusy && (
+          {isBusy ? (
             <Button variant="outline" onClick={onCancel}>
               <X className="mr-2 h-4 w-4" />
               Cancel
             </Button>
-          )}
-          {(hasInput || pageState !== 'idle') && !isBusy && (
+          ) : null}
+          {(hasInput || pageState !== 'idle') && !isBusy ? (
             <Button variant="outline" onClick={onReset}>
               <RotateCcw className="mr-2 h-4 w-4" />
               New
             </Button>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

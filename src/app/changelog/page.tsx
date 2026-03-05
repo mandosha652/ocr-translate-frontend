@@ -172,8 +172,11 @@ export default function ChangelogPage() {
                   ))}
                 </div>
                 <ul className="space-y-2">
-                  {release.changes.map((change, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm">
+                  {release.changes.map(change => (
+                    <li
+                      key={change.text}
+                      className="flex items-start gap-3 text-sm"
+                    >
                       <span
                         className={`mt-0.5 w-10 shrink-0 text-right text-xs font-semibold ${TYPE_CLASS[change.type]}`}
                       >

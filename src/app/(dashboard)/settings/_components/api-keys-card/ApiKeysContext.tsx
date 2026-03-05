@@ -120,8 +120,9 @@ const ApiKeysContext = createContext<ApiKeysContextValue | null>(null);
 
 export function useApiKeysContext() {
   const ctx = useContext(ApiKeysContext);
-  if (!ctx)
+  if (!ctx) {
     throw new Error('useApiKeysContext must be used within ApiKeysProvider');
+  }
   return ctx;
 }
 

@@ -36,7 +36,9 @@ export function UserDropdown({ user, initials, onLogout }: UserDropdownProps) {
       <DropdownMenuContent align="end">
         <div className="flex items-center gap-2 p-2">
           <div className="flex flex-col space-y-1">
-            {user?.name && <p className="text-sm font-medium">{user.name}</p>}
+            {user?.name ? (
+              <p className="text-sm font-medium">{user.name}</p>
+            ) : null}
             <p className="text-muted-foreground text-xs">{user?.email}</p>
           </div>
         </div>

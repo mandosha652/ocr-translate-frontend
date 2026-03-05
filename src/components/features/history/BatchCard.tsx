@@ -67,11 +67,11 @@ export function BatchCard({ batch }: BatchCardProps) {
         onDownloadAll={handleDownloadAll}
         isZipping={isZipping}
       />
-      {expanded && (
+      {expanded ? (
         <div id={panelId} className="space-y-5 border-t px-4 pt-3 pb-4">
           <BatchCardDetails batch={batch} batchId={batch.batch_id} />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

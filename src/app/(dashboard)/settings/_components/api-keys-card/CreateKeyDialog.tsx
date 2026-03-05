@@ -69,9 +69,9 @@ export function CreateKeyDialog() {
                 onClick={handleCreateKey}
                 disabled={createApiKey.isPending}
               >
-                {createApiKey.isPending && (
+                {createApiKey.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                ) : null}
                 Create
               </Button>
             </>

@@ -95,7 +95,7 @@ export function proxy(request: NextRequest) {
   const cspHeader = `
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''} https://vercel.live https://*.vercel-scripts.com;
-    style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`};
+    style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https:;
     font-src 'self';
     connect-src 'self' https://o4510886285672448.ingest.us.sentry.io https://vercel.live wss:${isDev ? ' http://localhost:* ws://localhost:*' : ''};

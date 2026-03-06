@@ -11,7 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css}\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "analyze": "ANALYZE=true next build",
+    "analyze": "ANALYZE=true next build --webpack",
     "deps:check": "depcruise src --config .dependency-cruiser.cjs",
     "deps:graph": "depcruise src --config .dependency-cruiser.cjs --output-type dot | dot -T svg > dependency-graph.svg",
     "checkall": "yarn lint:fix && yarn format && yarn typecheck && knip",

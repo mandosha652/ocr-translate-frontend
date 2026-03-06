@@ -11,7 +11,7 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css}\"",
     "typecheck": "next typegen && tsc --noEmit",
-    "analyze": "next experimental-analyze",
+    "analyze": "ANALYZE=true next build",
     "deps:check": "depcruise src --config .dependency-cruiser.cjs",
     "deps:graph": "depcruise src --config .dependency-cruiser.cjs --output-type dot | dot -T svg > dependency-graph.svg",
     "checkall": "yarn lint:fix && yarn format && yarn typecheck && knip",
@@ -60,6 +60,7 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@tanstack/react-query-devtools": "^5.91.1",

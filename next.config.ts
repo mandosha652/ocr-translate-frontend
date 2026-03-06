@@ -1,3 +1,4 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 import type { NextConfig } from 'next';
 
@@ -53,7 +54,11 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(nextConfig, {
+const analyze = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
+export default withSentryConfig(analyze(nextConfig), {
   org: 'ocr-translate',
 
   project: 'imgtext',

@@ -9,6 +9,7 @@ const ERROR_MAP: Record<string, string> = {
   'invalid token': 'Your session has expired — please log in again',
   'token expired': 'Your session has expired — please log in again',
   'not verified': 'Please verify your email before continuing',
+  'verify your email': 'Please verify your email before using this feature',
   'account inactive': 'Your account has been deactivated',
   // API keys
   'api key not found': 'API key not found',

@@ -15,6 +15,7 @@ import {
   MultiLanguageSelect,
 } from '@/components/features/batch';
 import { LanguageSelect } from '@/components/features/translate/LanguageSelect';
+import { VerifyEmailNotice } from '@/components/features/verify-email-notice';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -181,6 +182,8 @@ export function BatchFormCard({
           </div>
         ) : null}
 
+        {!user?.is_verified && <VerifyEmailNotice />}
+
         <Button
           onClick={handleStartBatch}
           disabled={
@@ -188,7 +191,8 @@ export function BatchFormCard({
             targetLanguages.length === 0 ||
             isPending ||
             atConcurrentLimit ||
-            !isWebhookValid
+            !isWebhookValid ||
+            !user?.is_verified
           }
           className="w-full"
           size="lg"

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { QuotaBanner } from '@/components/features/upgrade/QuotaBanner';
 import { UpgradeModal } from '@/components/features/upgrade/UpgradeModal';
 import {
+  useAuth,
   useSubmitTranslationJob,
   useTranslationJob,
   useUsageStats,
@@ -29,6 +30,7 @@ export default function TranslatePage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
 
+  const { user } = useAuth();
   const submitMutation = useSubmitTranslationJob();
   const jobQuery = useTranslationJob(jobId);
   const { data: usageStats } = useUsageStats();
@@ -152,6 +154,7 @@ export default function TranslatePage() {
           isBusy={isBusy}
           hasInput={hasInput}
           canSubmit={canSubmit}
+          isVerified={user?.is_verified ?? true}
           onTranslate={handleTranslate}
           onCancel={handleCancel}
           onReset={handleReset}

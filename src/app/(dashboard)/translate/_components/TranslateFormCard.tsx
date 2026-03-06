@@ -4,6 +4,7 @@ import { Link as LinkIcon, Loader2, RotateCcw, Upload, X } from 'lucide-react';
 
 import { ImageUploader } from '@/components/features/translate/ImageUploader';
 import { LanguageSelect } from '@/components/features/translate/LanguageSelect';
+import { VerifyEmailNotice } from '@/components/features/verify-email-notice';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -35,6 +36,7 @@ interface TranslateFormCardProps {
   isBusy: boolean;
   hasInput: boolean;
   canSubmit: boolean;
+  isVerified: boolean;
   onTranslate: () => void;
   onCancel: () => void;
   onReset: () => void;
@@ -55,6 +57,7 @@ export function TranslateFormCard({
   isBusy,
   hasInput,
   canSubmit,
+  isVerified,
   onTranslate,
   onCancel,
   onReset,
@@ -133,10 +136,12 @@ export function TranslateFormCard({
           />
         </div>
 
+        {!isVerified && <VerifyEmailNotice />}
+
         <div className="flex gap-3">
           <Button
             onClick={onTranslate}
-            disabled={!canSubmit}
+            disabled={!canSubmit || !isVerified}
             className="flex-1"
           >
             {isBusy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

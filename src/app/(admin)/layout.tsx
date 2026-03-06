@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 import { AdminAuthGate } from '@/components/admin/AdminAuthGate';
 import { AdminNav } from '@/components/admin/AdminNav';
@@ -10,21 +10,34 @@ import { adminKeyStorage } from '@/lib/api/admin';
 // Admin pages are protected by robots.txt and middleware
 // SEO: Never indexed (disallowed in robots.txt, protected by admin key)
 
+let listeners: Array<() => void> = [];
+function emitChange() {
+  for (const listener of listeners) listener();
+}
+
+const subscribe = (onStoreChange: () => void) => {
+  listeners = [...listeners, onStoreChange];
+  return () => {
+    listeners = listeners.filter(l => l !== onStoreChange);
+  };
+};
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [hasKey, setHasKey] = useState<boolean | null>(() => {
-    if (typeof window === 'undefined') return null;
-    return adminKeyStorage.has();
-  });
+  const hasKey = useSyncExternalStore(
+    subscribe,
+    useCallback(() => adminKeyStorage.has(), []),
+    () => null
+  );
 
   // Avoid flash — wait for client-side check
   if (hasKey === null) return null;
 
   if (!hasKey) {
-    return <AdminAuthGate onAuthenticated={() => setHasKey(true)} />;
+    return <AdminAuthGate onAuthenticated={emitChange} />;
   }
 
   return (

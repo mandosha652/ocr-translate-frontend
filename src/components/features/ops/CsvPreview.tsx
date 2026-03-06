@@ -40,21 +40,92 @@ const REQUIRED_COLUMNS = [
 ];
 const VALID_LANG_CODES = new Set(SUPPORTED_LANGUAGES.map(l => l.code));
 
-function parseCsv(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-  if (lines.length === 0) return { headers: [], rows: [] };
+function detectDelimiter(headerLine: string): string {
+  const candidates = [',', '\t', ';'] as const;
+  let best: string = ',';
+  let bestCount = 0;
+  for (const d of candidates) {
+    const count = headerLine.split(d).length - 1;
+    if (count > bestCount) {
+      bestCount = count;
+      best = d;
+    }
+  }
+  return best;
+}
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-  const rows = lines
-    .slice(1)
-    .map(line => line.split(',').map(cell => cell.trim()));
-  return { headers, rows };
+function parseCsv(text: string): {
+  headers: string[];
+  rows: string[][];
+  delimiter: string;
+} {
+  // Strip BOM (Excel UTF-8 exports)
+  const clean = text.replace(/^\uFEFF/, '');
+  if (clean.trim().length === 0) {
+    return { headers: [], rows: [], delimiter: ',' };
+  }
+
+  const firstLineEnd = clean.search(/\r?\n/);
+  const headerLine = firstLineEnd === -1 ? clean : clean.slice(0, firstLineEnd);
+  const delimiter = detectDelimiter(headerLine);
+
+  // RFC 4180 compliant parser — handles quoted fields, escaped quotes,
+  // multiline values, BOM, and auto-detected delimiters (comma/tab/semicolon).
+  const rows: string[][] = [];
+  let field = '';
+  let inQuotes = false;
+  let row: string[] = [];
+
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+
+    if (inQuotes) {
+      if (ch === '"') {
+        if (i + 1 < clean.length && clean[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === delimiter) {
+      row.push(field.trim());
+      field = '';
+    } else if (ch === '\r') {
+      // skip \r; \n will finalize the row
+    } else if (ch === '\n') {
+      row.push(field.trim());
+      field = '';
+      if (row.some(cell => cell !== '')) rows.push(row);
+      row = [];
+    } else {
+      field += ch;
+    }
+  }
+
+  // Last field / row (file may not end with newline)
+  row.push(field.trim());
+  if (row.some(cell => cell !== '')) rows.push(row);
+
+  if (rows.length === 0) return { headers: [], rows: [], delimiter };
+
+  const headers = rows[0].map(h => h.toLowerCase());
+  return { headers, rows: rows.slice(1), delimiter };
 }
 
 function validate(text: string): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const { headers, rows: rawRows } = parseCsv(text);
+  const { headers, rows: rawRows, delimiter } = parseCsv(text);
+
+  if (delimiter !== ',') {
+    const name = delimiter === '\t' ? 'tab' : `"${delimiter}"`;
+    warnings.push(`Detected ${name}-separated file (not comma) — parsed OK`);
+  }
 
   if (headers.length === 0) {
     return { errors: ['CSV file is empty'], warnings, rows: [], totalRows: 0 };
@@ -67,11 +138,18 @@ function validate(text: string): ValidationResult {
   }
 
   const colIdx = Object.fromEntries(headers.map((h, i) => [h, i]));
+  const expectedCols = headers.length;
   const parsed: ParsedRow[] = [];
 
   for (let i = 0; i < rawRows.length; i++) {
     const raw = rawRows[i];
     const rowNum = i + 2; // 1-indexed + header
+
+    if (raw.length !== expectedCols) {
+      warnings.push(
+        `Row ${rowNum}: expected ${expectedCols} columns, got ${raw.length}`
+      );
+    }
 
     const row: ParsedRow = {
       image_url: raw[colIdx['image_url']] ?? '',
@@ -93,7 +171,7 @@ function validate(text: string): ValidationResult {
     }
 
     const targets = row.target_langs
-      .split(/[;|]/)
+      .split(/[;|,]/)
       .map(t => t.trim())
       .filter(Boolean);
     if (targets.length === 0) {
@@ -284,8 +362,12 @@ export function validateCsvFile(file: File): Promise<boolean> {
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.onload = e => {
-      const result = validate(e.target?.result as string);
-      resolve(result.errors.length === 0);
+      try {
+        const result = validate(e.target?.result as string);
+        resolve(result.errors.length === 0);
+      } catch {
+        resolve(false);
+      }
     };
     reader.onerror = () => resolve(false);
     reader.readAsText(file);

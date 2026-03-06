@@ -138,6 +138,7 @@ export default function TeamDashboardPage({
   const { mutate: cancelBatch, isPending: cancelling } = useTeamCancelBatch();
 
   const handleFileSelected = useCallback(async (file: File) => {
+    setCsvValid(false);
     setSelectedFile(file);
     const valid = await validateCsvFile(file);
     setCsvValid(valid);

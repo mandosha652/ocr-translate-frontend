@@ -91,6 +91,12 @@ function TierBreakdownCard({
               cls: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-400',
             },
             {
+              label: 'Business',
+              tier: 'business',
+              count: stats.users_by_tier.business,
+              cls: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
+            },
+            {
               label: 'Enterprise',
               tier: 'enterprise',
               count: stats.users_by_tier.enterprise,

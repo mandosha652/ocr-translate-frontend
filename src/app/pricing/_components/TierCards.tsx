@@ -17,9 +17,9 @@ interface TierCardsProps {
 
 export function TierCards({ tiers }: TierCardsProps) {
   return (
-    <div className="mb-16 grid gap-6 md:grid-cols-3">
+    <div className="mb-16 grid gap-6 md:grid-cols-4">
       {tiers.map((tier, index) => {
-        const isPopular = tier.id === 'pro';
+        const isPopular = tier.id === 'business';
 
         return (
           <motion.div

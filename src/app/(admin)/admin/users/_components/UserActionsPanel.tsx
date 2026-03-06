@@ -43,7 +43,7 @@ import {
 interface UserActionsPanelProps {
   userId: string;
   email: string;
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: 'free' | 'pro' | 'business' | 'enterprise';
   userType: 'customer' | 'team';
   isActive: boolean;
   isVerified: boolean;
@@ -143,37 +143,6 @@ export function UserActionsPanel({
 
   return (
     <div className="space-y-5">
-      {/* Tier management */}
-      <div>
-        <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
-          Plan Tier
-        </p>
-        <div className="flex gap-2">
-          <Select
-            value={selectedTier}
-            onValueChange={v =>
-              setSelectedTier(v as 'free' | 'pro' | 'enterprise')
-            }
-          >
-            <SelectTrigger className="flex-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="free">Free</SelectItem>
-              <SelectItem value="pro">Pro</SelectItem>
-              <SelectItem value="enterprise">Enterprise</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            onClick={handleSaveTier}
-            disabled={selectedTier === tier || updateUser.isPending}
-            size="sm"
-          >
-            Save
-          </Button>
-        </div>
-      </div>
-
       {/* User type */}
       <div>
         <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
@@ -201,6 +170,45 @@ export function UserActionsPanel({
           </Button>
         </div>
       </div>
+
+      {/* Tier management — only for customers */}
+      {selectedUserType === 'customer' ? (
+        <div>
+          <p className="text-muted-foreground mb-2 text-xs font-medium tracking-wide uppercase">
+            Plan Tier
+          </p>
+          <div className="flex gap-2">
+            <Select
+              value={selectedTier}
+              onValueChange={v =>
+                setSelectedTier(v as 'free' | 'pro' | 'business' | 'enterprise')
+              }
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={handleSaveTier}
+              disabled={selectedTier === tier || updateUser.isPending}
+              size="sm"
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-xs">
+          Team users have their own limits (3 concurrent batches, 30-day
+          retention). Tier does not apply.
+        </p>
+      )}
 
       {/* Quick actions */}
       <div>

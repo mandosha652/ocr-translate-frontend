@@ -48,6 +48,7 @@ export function UserFilters({
           <SelectItem value="all">All Tiers</SelectItem>
           <SelectItem value="free">Free</SelectItem>
           <SelectItem value="pro">Pro</SelectItem>
+          <SelectItem value="business">Business</SelectItem>
           <SelectItem value="enterprise">Enterprise</SelectItem>
         </SelectContent>
       </Select>

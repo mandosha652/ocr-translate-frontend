@@ -2,7 +2,7 @@ export interface AdminUserSummary {
   id: string;
   email: string;
   name: string | null;
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: 'free' | 'pro' | 'business' | 'enterprise';
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
@@ -22,13 +22,13 @@ export interface AdminCreateUser {
   email: string;
   password: string;
   name?: string;
-  tier?: 'free' | 'pro' | 'enterprise';
+  tier?: 'free' | 'pro' | 'business' | 'enterprise';
   user_type?: 'customer' | 'team';
   is_verified?: boolean;
 }
 
 export interface AdminUpdateUser {
-  tier?: 'free' | 'pro' | 'enterprise';
+  tier?: 'free' | 'pro' | 'business' | 'enterprise';
   user_type?: 'customer' | 'team';
   is_active?: boolean;
   is_verified?: boolean;
@@ -93,6 +93,7 @@ export interface AdminBatchDetail extends AdminBatchSummary {
 export interface TierBreakdown {
   free: number;
   pro: number;
+  business: number;
   enterprise: number;
 }
 

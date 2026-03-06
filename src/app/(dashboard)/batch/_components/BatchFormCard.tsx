@@ -27,10 +27,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBatchFormSubmit } from '@/hooks';
 import {
-  FREE_TIER_MAX_TARGET_LANGUAGES,
+  getMaxConcurrentBatches,
+  getMaxTargetLanguages,
   MAX_BATCH_SIZE,
-  MAX_CONCURRENT_BATCHES,
-  PRO_TIER_MAX_TARGET_LANGUAGES,
 } from '@/lib/constants';
 import { useAuthStore } from '@/store/authStore';
 
@@ -53,10 +52,9 @@ export function BatchFormCard({
   maxBatchSize = MAX_BATCH_SIZE,
 }: BatchFormCardProps) {
   const { user } = useAuthStore();
-  const maxTargetLanguages =
-    user?.tier === 'pro' || user?.tier === 'enterprise'
-      ? PRO_TIER_MAX_TARGET_LANGUAGES
-      : FREE_TIER_MAX_TARGET_LANGUAGES;
+  const tier = user?.tier || 'free';
+  const maxTargetLanguages = getMaxTargetLanguages(tier);
+  const maxConcurrentBatches = getMaxConcurrentBatches(tier);
 
   const [inputMode, setInputMode] = useState<InputMode>('upload');
   const [files, setFiles] = useState<File[]>([]);
@@ -66,7 +64,7 @@ export function BatchFormCard({
   const [excludeText, setExcludeText] = useState('');
   const [webhookUrl, setWebhookUrl] = useState('');
 
-  const atConcurrentLimit = activeBatchCount >= MAX_CONCURRENT_BATCHES;
+  const atConcurrentLimit = activeBatchCount >= maxConcurrentBatches;
   const isWebhookValid = webhookUrl.trim()
     ? isWebhookUrlValid(webhookUrl)
     : true;
@@ -94,6 +92,7 @@ export function BatchFormCard({
     onBatchStarted,
     onUpgradeRequired,
     resetForm,
+    maxConcurrentBatches,
     maxTargetLanguages,
   });
 

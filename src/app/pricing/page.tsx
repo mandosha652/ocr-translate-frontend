@@ -11,35 +11,108 @@ interface TierFeature {
   label: string;
   free: string | boolean;
   pro: string | boolean;
+  business: string | boolean;
   enterprise: string | boolean;
 }
 
 const FEATURES: TierFeature[] = [
   {
     label: 'Images per month',
-    free: '50',
-    pro: '2,000',
+    free: '20',
+    pro: '500',
+    business: '2,000',
+    enterprise: 'Unlimited',
+  },
+  {
+    label: 'Generative images per month',
+    free: '5',
+    pro: '50',
+    business: '200',
     enterprise: 'Unlimited',
   },
   {
     label: 'Batch size',
     free: '5 images',
-    pro: '100 images',
+    pro: '25 images',
+    business: '50 images',
     enterprise: '100 images',
   },
-  { label: 'Target languages', free: '3', pro: '11', enterprise: '11' },
-  { label: 'API access', free: true, pro: true, enterprise: true },
-  { label: 'Webhooks', free: false, pro: true, enterprise: true },
-  { label: 'Logo removal', free: false, pro: true, enterprise: true },
-  { label: 'Priority support', free: false, pro: true, enterprise: true },
-  { label: 'Custom integrations', free: false, pro: false, enterprise: true },
-  { label: 'Dedicated support', free: false, pro: false, enterprise: true },
-  { label: 'Custom SLA', free: false, pro: false, enterprise: true },
+  {
+    label: 'Target languages per batch',
+    free: '2',
+    pro: '5',
+    business: 'All (26)',
+    enterprise: 'All (26)',
+  },
+  {
+    label: 'Concurrent batches',
+    free: '1',
+    pro: '3',
+    business: '5',
+    enterprise: '20',
+  },
+  {
+    label: 'API keys',
+    free: '2',
+    pro: '10',
+    business: '25',
+    enterprise: '50',
+  },
+  {
+    label: 'API access',
+    free: true,
+    pro: true,
+    business: true,
+    enterprise: true,
+  },
+  {
+    label: 'Webhooks',
+    free: false,
+    pro: true,
+    business: true,
+    enterprise: true,
+  },
+  {
+    label: 'Logo removal',
+    free: false,
+    pro: true,
+    business: true,
+    enterprise: true,
+  },
+  {
+    label: 'Priority support',
+    free: false,
+    pro: true,
+    business: true,
+    enterprise: true,
+  },
+  {
+    label: 'Custom integrations',
+    free: false,
+    pro: false,
+    business: false,
+    enterprise: true,
+  },
+  {
+    label: 'Dedicated support',
+    free: false,
+    pro: false,
+    business: true,
+    enterprise: true,
+  },
+  {
+    label: 'Custom SLA',
+    free: false,
+    pro: false,
+    business: false,
+    enterprise: true,
+  },
   {
     label: 'File retention',
     free: '7 days',
     pro: '30 days',
-    enterprise: 'Never',
+    business: '90 days',
+    enterprise: '365 days',
   },
 ];
 
@@ -54,8 +127,16 @@ const TIERS = [
   {
     id: 'pro',
     name: 'Pro',
-    description: 'For professionals and growing teams',
+    description: 'For professionals and small teams',
     price: '$29',
+    billingPeriod: '/month',
+    cta: 'Start free trial',
+  },
+  {
+    id: 'business',
+    name: 'Business',
+    description: 'For growing teams with high volume',
+    price: '$99',
     billingPeriod: '/month',
     cta: 'Start free trial',
   },

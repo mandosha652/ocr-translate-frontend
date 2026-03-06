@@ -3,10 +3,7 @@
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import {
-  FREE_TIER_MAX_TARGET_LANGUAGES,
-  MAX_CONCURRENT_BATCHES,
-} from '@/lib/constants';
+import { FREE_TIER_MAX_TARGET_LANGUAGES } from '@/lib/constants';
 import { getErrorMessage, getErrorStatus } from '@/lib/utils/error';
 import { isValidHttpUrl } from '@/lib/utils/url';
 
@@ -24,6 +21,7 @@ interface UseBatchFormSubmitArgs {
   webhookUrl: string;
   isWebhookValid: boolean;
   activeBatchCount: number;
+  maxConcurrentBatches?: number;
   maxTargetLanguages?: number;
   onBatchStarted: () => void;
   onUpgradeRequired: () => void;
@@ -50,6 +48,7 @@ export function useBatchFormSubmit({
   webhookUrl,
   isWebhookValid,
   activeBatchCount,
+  maxConcurrentBatches = 1,
   maxTargetLanguages = FREE_TIER_MAX_TARGET_LANGUAGES,
   onBatchStarted,
   onUpgradeRequired,
@@ -80,7 +79,7 @@ export function useBatchFormSubmit({
       );
       return;
     }
-    if (activeBatchCount >= MAX_CONCURRENT_BATCHES) {
+    if (activeBatchCount >= maxConcurrentBatches) {
       toast.error('Too many active batches — wait for one to finish');
       return;
     }
@@ -126,6 +125,7 @@ export function useBatchFormSubmit({
     webhookUrl,
     isWebhookValid,
     activeBatchCount,
+    maxConcurrentBatches,
     maxTargetLanguages,
     createBatchMutation,
     resetForm,

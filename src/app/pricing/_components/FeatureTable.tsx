@@ -4,6 +4,7 @@ interface TierFeature {
   label: string;
   free: string | boolean;
   pro: string | boolean;
+  business: string | boolean;
   enterprise: string | boolean;
 }
 
@@ -28,7 +29,7 @@ export function FeatureTable({ features, tiers }: FeatureTableProps) {
 
       {/* Desktop table (md+) */}
       <div className="hidden md:block">
-        <div className="border-primary/10 bg-muted/30 grid grid-cols-4 border-b px-8 py-4">
+        <div className="border-primary/10 bg-muted/30 grid grid-cols-5 border-b px-8 py-4">
           <div className="text-muted-foreground text-sm font-semibold">
             Feature
           </div>
@@ -45,7 +46,7 @@ export function FeatureTable({ features, tiers }: FeatureTableProps) {
         {features.map((feature, i) => (
           <div
             key={feature.label}
-            className={`hover:bg-primary/2 grid grid-cols-4 items-center px-8 py-5 transition-colors ${
+            className={`hover:bg-primary/2 grid grid-cols-5 items-center px-8 py-5 transition-colors ${
               i < features.length - 1 ? 'border-primary/5 border-b' : ''
             }`}
           >
@@ -57,6 +58,9 @@ export function FeatureTable({ features, tiers }: FeatureTableProps) {
             </div>
             <div className="text-center">
               <FeatureValue value={feature.pro} />
+            </div>
+            <div className="text-center">
+              <FeatureValue value={feature.business} />
             </div>
             <div className="text-center">
               <FeatureValue value={feature.enterprise} />
@@ -75,7 +79,7 @@ export function FeatureTable({ features, tiers }: FeatureTableProps) {
             <p className="text-foreground mb-4 text-sm font-semibold">
               {feature.label}
             </p>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               {tiers.map(tier => (
                 <div key={tier.id} className="text-center">
                   <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">

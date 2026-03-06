@@ -141,12 +141,41 @@ export const translateApi = {
   retryBatchImage: async (
     batchId: string,
     imageId: string
-  ): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post<{
-      success: boolean;
-      message: string;
-    }>(ENDPOINTS.BATCH_RETRY_IMAGE(batchId, imageId));
+  ): Promise<{ status: string }> => {
+    const response = await apiClient.post<{ status: string }>(
+      ENDPOINTS.BATCH_RETRY_IMAGE(batchId, imageId)
+    );
     return response.data;
+  },
+
+  retryAllFailed: async (
+    batchId: string
+  ): Promise<{ status: string; retried_count: number }> => {
+    const response = await apiClient.post<{
+      status: string;
+      retried_count: number;
+    }>(ENDPOINTS.BATCH_RETRY_FAILED(batchId));
+    return response.data;
+  },
+
+  updateCaption: async (
+    batchId: string,
+    imageId: string,
+    lang: string,
+    caption: string
+  ): Promise<{ status: string }> => {
+    const response = await apiClient.patch<{ status: string }>(
+      ENDPOINTS.BATCH_UPDATE_CAPTION(batchId),
+      { image_id: imageId, lang, caption }
+    );
+    return response.data;
+  },
+
+  exportBatchCSV: async (batchId: string): Promise<Blob> => {
+    const response = await apiClient.get(ENDPOINTS.BATCH_EXPORT(batchId), {
+      responseType: 'blob',
+    });
+    return response.data as Blob;
   },
 
   /**

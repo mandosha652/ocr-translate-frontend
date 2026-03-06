@@ -30,7 +30,12 @@ export const ENDPOINTS = {
   BATCH_STATUS: (batchId: string) => `/api/v1/batch/${batchId}`,
   BATCH_CANCEL: (batchId: string) => `/api/v1/batch/${batchId}/cancel`,
   BATCH_RETRY_IMAGE: (batchId: string, imageId: string) =>
-    `/api/v1/batch/${batchId}/retry-image/${imageId}`,
+    `/api/v1/team/batch/${batchId}/image/${imageId}/retry`,
+  BATCH_RETRY_FAILED: (batchId: string) =>
+    `/api/v1/team/batch/${batchId}/retry-failed`,
+  BATCH_UPDATE_CAPTION: (batchId: string) =>
+    `/api/v1/team/batch/${batchId}/caption`,
+  BATCH_EXPORT: (batchId: string) => `/api/v1/team/batch/${batchId}/export`,
   BATCH_STREAM: (batchId: string) => `/api/v1/batch/${batchId}/stream`,
   API_KEY_STATS: (keyId: string) => `/api/v1/auth/api-keys/${keyId}/stats`,
   TRANSLATE_HISTORY: '/api/v1/history',

@@ -9,17 +9,21 @@ export type BatchStatus =
 export type ImageStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface TranslationOutput {
+  translation_id: string;
   target_lang: string;
   translated_image_url: string | null;
+  translated_caption: string | null;
   status: ImageStatus;
   error: string | null;
 }
 
 export interface ImageResult {
   image_id: string;
+  row_index: number;
   original_filename: string;
   status: ImageStatus;
   original_image_url: string | null;
+  caption: string | null;
   translations: TranslationOutput[];
   error: string | null;
 }
@@ -37,7 +41,9 @@ export interface BatchStatusResponse {
   success: boolean;
   batch_id: string;
   status: BatchStatus;
+  captions_status: 'pending' | 'processing' | 'completed' | 'failed';
   total_images: number;
+  source_language: string | null;
   target_languages: string[];
   completed_count: number;
   failed_count: number;

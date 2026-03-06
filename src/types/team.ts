@@ -28,7 +28,7 @@ export interface TeamBatchListResponse {
   batches: TeamBatchSummary[];
 }
 
-export type CaptionsStatus = 'pending' | 'processing' | 'completed';
+export type CaptionsStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface TeamBatchStatus extends TeamBatchSummary {
   captions_status: CaptionsStatus;

@@ -3,6 +3,7 @@ export interface AdminUserSummary {
   email: string;
   name: string | null;
   tier: 'free' | 'pro' | 'business' | 'enterprise';
+  user_type: 'customer' | 'team';
   is_active: boolean;
   is_verified: boolean;
   created_at: string;
@@ -10,7 +11,6 @@ export interface AdminUserSummary {
 
 export interface AdminUserDetail extends AdminUserSummary {
   updated_at: string;
-  user_type: 'customer' | 'team';
   api_key_count: number;
   total_batches: number;
   total_images_processed: number;

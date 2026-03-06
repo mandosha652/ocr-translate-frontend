@@ -7,18 +7,14 @@ import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import {
-  useBatchStatus,
-  useBatchStream,
-  useCancelBatch,
-  useRetryBatchImage,
-} from '@/hooks';
+import { useBatchStatus, useBatchStream, useCancelBatch } from '@/hooks';
 import { getErrorMessage } from '@/lib/utils';
 import type { BatchStatusResponse } from '@/types';
 
 import { BatchDetailHeader } from './BatchDetailHeader';
 import { BatchDetailImages } from './BatchDetailImages';
 import { BatchDetailProgress } from './BatchDetailProgress';
+import { BatchResultsTable } from './BatchResultsTable';
 
 interface BatchDetailContentProps {
   batchId: string;
@@ -27,7 +23,6 @@ interface BatchDetailContentProps {
 export function BatchDetailContent({ batchId }: BatchDetailContentProps) {
   const queryClient = useQueryClient();
   const cancelBatch = useCancelBatch();
-  const retryImage = useRetryBatchImage();
 
   const { data: batch, isLoading, isError } = useBatchStatus(batchId);
 
@@ -121,18 +116,15 @@ export function BatchDetailContent({ batchId }: BatchDetailContentProps) {
         />
       ) : null}
 
-      <BatchDetailImages
-        batch={merged}
-        batchId={batchId}
-        isProcessing={isProcessing}
-        isExpired={isExpired}
-        onRetry={imageId => retryImage.mutate({ batchId, imageId })}
-        onRetryAll={imageIds =>
-          imageIds.forEach(imageId => retryImage.mutate({ batchId, imageId }))
-        }
-        isRetrying={retryImage.isPending}
-        retryingImageId={retryImage.variables?.imageId}
-      />
+      {!isProcessing && !isExpired && merged.images.length > 0 ? (
+        <BatchResultsTable batch={merged} batchId={batchId} />
+      ) : (
+        <BatchDetailImages
+          batch={merged}
+          isProcessing={isProcessing}
+          isExpired={isExpired}
+        />
+      )}
     </div>
   );
 }

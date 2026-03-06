@@ -9,8 +9,11 @@ import type { AdminUserSummary } from '@/types';
 const TIER_STYLES: Record<string, string> = {
   free: 'border-border text-muted-foreground',
   pro: 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-400',
+  business:
+    'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400',
   enterprise:
     'border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-700 dark:bg-purple-950/40 dark:text-purple-400',
+  team: 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
 };
 
 const AVATAR_COLORS = [
@@ -66,9 +69,9 @@ export function UserRow({ user }: { user: AdminUserSummary }) {
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-1.5">
           <Badge
             variant="outline"
-            className={`text-xs ${TIER_STYLES[user.tier] ?? ''}`}
+            className={`text-xs ${TIER_STYLES[user.user_type === 'team' ? 'team' : user.tier] ?? ''}`}
           >
-            {user.tier}
+            {user.user_type === 'team' ? 'team' : user.tier}
           </Badge>
           {!user.is_active && (
             <Badge variant="destructive" className="text-xs">

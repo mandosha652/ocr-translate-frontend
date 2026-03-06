@@ -1,6 +1,11 @@
 'use client';
 
-import { Toaster } from '@/components/ui/sonner';
+import dynamic from 'next/dynamic';
+
+const Toaster = dynamic(
+  () => import('@/components/ui/sonner').then(mod => mod.Toaster),
+  { ssr: false }
+);
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 import { QueryProvider } from './QueryProvider';

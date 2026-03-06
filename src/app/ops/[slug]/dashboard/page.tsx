@@ -249,7 +249,7 @@ export default function TeamDashboardPage({
                     disabled={uploading}
                   />
 
-                  <details className="group">
+                  <details className="group" suppressHydrationWarning>
                     <summary className="text-muted-foreground hover:text-foreground cursor-pointer text-xs transition-colors select-none">
                       Language codes reference
                     </summary>

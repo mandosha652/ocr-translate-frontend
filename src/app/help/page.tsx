@@ -1,7 +1,8 @@
-import { ArrowLeft, BookOpen, Languages } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/Logo';
 
 import { ContactSection } from './_components/ContactSection';
 import { HelpSection } from './_components/HelpSection';
@@ -93,10 +94,7 @@ export default function HelpPage() {
       />
       <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <Languages className="h-6 w-6" />
-            <span className="text-lg font-semibold">ImgText</span>
-          </Link>
+          <Logo href="/" size="md" />
           <Link href="/">
             <Button variant="ghost" size="sm" className="gap-2">
               <ArrowLeft className="h-4 w-4" />
@@ -127,10 +125,7 @@ export default function HelpPage() {
       <footer className="border-t">
         <div className="container mx-auto max-w-6xl px-4 py-6">
           <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
-            <div className="flex items-center gap-2">
-              <Languages className="h-5 w-5" />
-              <span className="font-semibold">ImgText</span>
-            </div>
+            <Logo size="sm" />
             <div className="text-muted-foreground flex gap-4 text-sm">
               <Link
                 href="/terms"

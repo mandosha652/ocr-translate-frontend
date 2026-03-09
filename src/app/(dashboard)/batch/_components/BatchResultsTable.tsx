@@ -1,23 +1,19 @@
 'use client';
 
 import {
-  type ColumnDef,
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import {
   CheckCircle2,
   Download,
+  Eye,
   ImageIcon,
   Loader2,
+  Maximize2,
+  MousePointerClick,
   Pencil,
   RefreshCw,
   XCircle,
 } from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { getLangName } from '@/components/features/history/utils';
@@ -37,59 +33,95 @@ import {
 } from '@/hooks';
 import { translateApi } from '@/lib/api';
 import { getImageUrl } from '@/lib/utils';
-import type {
-  BatchStatusResponse,
-  ImageResult,
-  TranslationOutput,
-} from '@/types';
+import type { ImageResult, TranslationOutput } from '@/types';
+
+type RetryImageMutation = ReturnType<typeof useRetryBatchImage>;
+type RetryAllFailedMutation = ReturnType<typeof useRetryAllFailed>;
+type UpdateCaptionMutation = ReturnType<typeof useUpdateCaption>;
 
 interface BatchResultsTableProps {
-  batch: BatchStatusResponse;
+  images: ImageResult[];
+  targetLanguages: string[];
+  sourceLanguage?: string;
   batchId: string;
+  retryImageHook?: RetryImageMutation;
+  retryAllFailedHook?: RetryAllFailedMutation;
+  updateCaptionHook?: UpdateCaptionMutation;
+  onExport?: (batchId: string) => void;
+  onResizeAll?: (onSuccess: (allIds: string[]) => void) => void;
+  onResizeSingle?: (translationId: string, onSuccess: () => void) => void;
+  resizing?: boolean;
+  hideActions?: boolean;
 }
 
-const columnHelper = createColumnHelper<ImageResult>();
-
-/* ── Lightbox ─────────────────────────────────────────────── */
+/* ── Lightbox (full preview + caption edit) ──────────────── */
 
 function ImageLightbox({
   src,
   alt,
+  caption,
   open,
   onOpenChange,
+  onSaveCaption,
 }: {
   src: string;
   alt: string;
+  caption?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSaveCaption?: (text: string) => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-2xl sm:rounded-2xl">
-        <DialogHeader className="px-6 pt-5 pb-0">
-          <DialogTitle className="truncate text-base font-medium">
+      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-4xl sm:rounded-2xl">
+        <DialogHeader className="border-b border-black/6 bg-black/2 px-6 pt-4 pb-3.5 dark:border-white/8 dark:bg-white/3">
+          <DialogTitle className="truncate text-sm font-semibold">
             {alt}
           </DialogTitle>
           <DialogDescription className="sr-only">
             Full-size preview
           </DialogDescription>
         </DialogHeader>
-        <div className="relative aspect-4/3 w-full">
+
+        <div className="relative aspect-[16/10] w-full bg-black/5 dark:bg-black/40">
           <Image
             src={src}
             alt={alt}
             fill
             className="object-contain"
             unoptimized
-            sizes="(max-width: 768px) 100vw, 672px"
+            sizes="(max-width: 768px) 100vw, 896px"
           />
+        </div>
+
+        {/* Caption section */}
+        <div className="border-t border-black/6 bg-black/2 px-6 py-4 dark:border-white/8 dark:bg-white/3">
+          {onSaveCaption ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Pencil className="h-3 w-3 text-[#0A84FF]" />
+                <span className="text-[10px] font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-500">
+                  Caption — click to edit
+                </span>
+              </div>
+              <EditableCaption value={caption ?? ''} onSave={onSaveCaption} />
+            </div>
+          ) : caption ? (
+            <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+              {caption}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400 italic dark:text-gray-600">
+              No caption
+            </p>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-/* ── Editable Caption ─────────────────────────────────────── */
+/* ── Editable Caption ────────────────────────────────────── */
 
 function EditableCaption({
   value,
@@ -114,7 +146,7 @@ function EditableCaption({
   if (editing) {
     return (
       <textarea
-        className="bg-muted/50 focus:ring-primary/40 w-full resize-none rounded-lg border-0 px-2.5 py-1.5 text-[13px] leading-snug ring-1 ring-transparent transition-shadow ring-inset focus:outline-none"
+        className="bg-background focus:ring-primary/40 w-full resize-none rounded-lg border px-3 py-2 text-sm leading-relaxed shadow-sm transition-shadow focus:ring-2 focus:outline-none"
         value={text}
         onChange={e => setText(e.target.value)}
         onBlur={handleBlur}
@@ -128,7 +160,7 @@ function EditableCaption({
             setEditing(false);
           }
         }}
-        rows={2}
+        rows={3}
         autoFocus
       />
     );
@@ -136,75 +168,97 @@ function EditableCaption({
 
   return (
     <button
-      onClick={() => setEditing(true)}
-      className="group/edit flex w-full cursor-text items-start gap-1 text-left text-[13px] leading-snug transition-colors"
-      title="Click to edit"
+      onClick={() => {
+        setText(value);
+        setEditing(true);
+      }}
+      className="group/edit hover:bg-muted/60 hover:border-border flex w-full cursor-text items-start gap-2 rounded-lg border border-transparent px-3 py-2 text-left text-sm leading-relaxed transition-all"
+      title="Click to edit caption"
     >
-      <span className="text-foreground/80 line-clamp-2 flex-1">
+      <span className="text-foreground/80 line-clamp-4 flex-1">
         {value || (
-          <span className="text-muted-foreground/60 italic">No caption</span>
+          <span className="text-muted-foreground/50 italic">
+            Click here to add a caption...
+          </span>
         )}
       </span>
-      <Pencil className="text-muted-foreground/0 group-hover/edit:text-muted-foreground/50 mt-0.5 h-3 w-3 shrink-0 transition-colors" />
+      <Pencil className="text-muted-foreground/0 group-hover/edit:text-muted-foreground/50 mt-0.5 h-3.5 w-3.5 shrink-0 transition-colors" />
     </button>
   );
 }
 
-/* ── Language Cell ─────────────────────────────────────────── */
+/* ── Translation Tile ────────────────────────────────────── */
 
-function LanguageCell({
+async function downloadSingleImage(url: string, lang: string) {
+  const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  const res = await fetch(proxyUrl);
+  const blob = await res.blob();
+  const ext = blob.type.includes('png') ? 'png' : 'jpg';
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = `${lang}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+}
+
+function TranslationTile({
   translation,
   imageId,
   batchId,
   onImageClick,
+  retryImage,
+  onResize,
+  resizing,
+  isResized,
 }: {
-  translation: TranslationOutput | undefined;
+  translation: TranslationOutput;
   imageId: string;
   batchId: string;
-  onImageClick: (src: string, alt: string) => void;
+  onImageClick: (
+    src: string,
+    alt: string,
+    caption?: string,
+    imageId?: string,
+    lang?: string
+  ) => void;
+  retryImage: RetryImageMutation;
+  onResize?: (translationId: string, onSuccess: () => void) => void;
+  resizing?: boolean;
+  isResized?: boolean;
 }) {
-  const retryImage = useRetryBatchImage();
-  const updateCaption = useUpdateCaption();
-
-  if (!translation) {
-    return (
-      <div className="flex h-full items-center justify-center py-3">
-        <span className="text-muted-foreground/40 text-xs">--</span>
-      </div>
-    );
-  }
+  const langName = getLangName(translation.target_lang);
 
   if (translation.status === 'pending' || translation.status === 'processing') {
     return (
-      <div className="flex flex-col items-center justify-center gap-1.5 py-4">
-        <div className="bg-primary/10 flex h-8 w-8 items-center justify-center rounded-full">
-          <Loader2 className="text-primary h-4 w-4 animate-spin" />
-        </div>
-        <span className="text-muted-foreground text-[11px]">Processing</span>
+      <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl bg-[#0A84FF]/8 dark:bg-[#0A84FF]/10">
+        <Loader2 className="h-5 w-5 animate-spin text-[#0A84FF]" />
+        <span className="text-muted-foreground text-[11px] font-medium">
+          Translating...
+        </span>
       </div>
     );
   }
 
   if (translation.status === 'failed') {
     return (
-      <div className="flex flex-col items-center gap-2 py-3">
-        <div className="bg-destructive/10 flex h-8 w-8 items-center justify-center rounded-full">
-          <XCircle className="text-destructive h-4 w-4" />
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 rounded-lg px-2.5 text-[11px]"
+      <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2.5 rounded-xl bg-[#FF453A]/8 dark:bg-[#FF453A]/10">
+        <XCircle className="h-5 w-5 text-[#FF453A]" />
+        <span className="text-[11px] font-medium text-[#FF453A]">Failed</span>
+        <button
+          className="flex items-center gap-1 rounded-full border border-[#FF453A]/25 bg-[#FF453A]/10 px-3 py-1 text-[11px] font-medium text-[#FF453A] transition-colors hover:bg-[#FF453A]/18"
           onClick={() => retryImage.mutate({ batchId, imageId })}
           disabled={retryImage.isPending}
         >
           {retryImage.isPending ? (
-            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <RefreshCw className="mr-1 h-3 w-3" />
+            <RefreshCw className="h-3 w-3" />
           )}
           Retry
-        </Button>
+        </button>
       </div>
     );
   }
@@ -214,51 +268,91 @@ function LanguageCell({
     : null;
 
   return (
-    <div className="flex gap-2.5 py-1">
+    <div className="group/tile">
       {imgUrl ? (
         <button
           onClick={() =>
             onImageClick(
               imgUrl,
-              `${getLangName(translation.target_lang)} translation`
+              `${langName} translation`,
+              translation.translated_caption ?? undefined,
+              imageId,
+              translation.target_lang
             )
           }
-          className="group/thumb bg-muted relative h-11 w-11 shrink-0 cursor-pointer overflow-hidden rounded-lg ring-1 ring-black/5 transition-shadow hover:shadow-md dark:ring-white/10"
+          className="group/thumb hover:ring-primary/30 dark:hover:ring-primary/30 relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-xl ring-1 ring-black/5 transition-all hover:shadow-lg hover:ring-2 dark:ring-white/10"
         >
           <Image
             src={imgUrl}
-            alt={`${translation.target_lang} translation`}
+            alt={`${langName} translation`}
             fill
-            className="object-cover transition-transform group-hover/thumb:scale-105"
+            className="object-cover transition-transform duration-200 group-hover/thumb:scale-[1.03]"
             unoptimized
             loading="lazy"
-            sizes="44px"
+            sizes="180px"
           />
+          {/* Hover overlay with clear action hint */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 transition-all duration-200 group-hover/thumb:bg-black/30">
+            <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 opacity-0 shadow-lg backdrop-blur-sm transition-all duration-200 group-hover/thumb:opacity-100 dark:bg-black/70">
+              <Eye className="h-3.5 w-3.5 text-gray-800 dark:text-white" />
+              <span className="text-[11px] font-medium text-gray-800 dark:text-white">
+                Preview & Edit
+              </span>
+            </div>
+          </div>
+        </button>
+      ) : (
+        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-[#30D158]/8 dark:bg-[#30D158]/10">
+          <CheckCircle2 className="h-6 w-6 text-[#30D158]/50" />
+        </div>
+      )}
+      {onResize &&
+      translation.status === 'completed' &&
+      translation.translated_image_url ? (
+        isResized ? (
+          <div className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg bg-[#30D158]/10 py-1.5 text-[10px] font-medium text-[#1a8c3a] dark:bg-[#30D158]/15 dark:text-[#30D158]">
+            <CheckCircle2 className="h-2.5 w-2.5" />
+            1080×1350
+          </div>
+        ) : (
+          <button
+            className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg bg-black/4 py-1.5 text-[10px] font-medium text-gray-500 opacity-0 transition-all group-hover/tile:opacity-100 hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+            onClick={e => {
+              e.stopPropagation();
+              onResize(translation.translation_id, () => {});
+            }}
+            disabled={resizing}
+          >
+            {resizing ? (
+              <Loader2 className="h-2.5 w-2.5 animate-spin" />
+            ) : (
+              <Maximize2 className="h-2.5 w-2.5" />
+            )}
+            1080×1350
+          </button>
+        )
+      ) : null}
+      {translation.status === 'completed' &&
+      translation.translated_image_url ? (
+        <button
+          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-black/4 py-1.5 text-[10px] font-medium text-gray-500 opacity-0 transition-all group-hover/tile:opacity-100 hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+          onClick={e => {
+            e.stopPropagation();
+            void downloadSingleImage(
+              translation.translated_image_url!,
+              translation.target_lang
+            );
+          }}
+        >
+          <Download className="h-2.5 w-2.5" />
+          Download
         </button>
       ) : null}
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <EditableCaption
-          value={translation.translated_caption ?? ''}
-          onSave={caption =>
-            updateCaption.mutate(
-              { batchId, imageId, lang: translation.target_lang, caption },
-              {
-                onSuccess: () => toast.success('Caption saved'),
-                onError: () => toast.error('Failed to save caption'),
-              }
-            )
-          }
-        />
-        <div className="flex items-center gap-1">
-          <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-          <span className="text-muted-foreground/60 text-[11px]">Done</span>
-        </div>
-      </div>
     </div>
   );
 }
 
-/* ── CSV Export ────────────────────────────────────────────── */
+/* ── CSV Export ───────────────────────────────────────────── */
 
 async function downloadCSV(batchId: string) {
   try {
@@ -277,260 +371,360 @@ async function downloadCSV(batchId: string) {
   }
 }
 
-/* ── Table Body (opted out of React Compiler — useReactTable returns unmemoizable fns) */
+/* ── Header Actions ──────────────────────────────────────── */
 
-function ResultsTableBody({
-  data,
-  columns,
+function ResultsHeaderActions({
+  failedCount,
+  hideActions,
+  allResized,
+  resizing,
+  batchId,
+  retryAllFailed,
+  onResizeAll,
+  onExport,
+  setResizedIds,
 }: {
-  data: ImageResult[];
-  columns: ColumnDef<ImageResult, unknown>[];
+  failedCount: number;
+  hideActions?: boolean;
+  allResized: boolean;
+  resizing?: boolean;
+  batchId: string;
+  retryAllFailed: ReturnType<typeof useRetryAllFailed>;
+  onResizeAll?: BatchResultsTableProps['onResizeAll'];
+  onExport?: BatchResultsTableProps['onExport'];
+  setResizedIds: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
-  'use no memo';
-
-  // eslint-disable-next-line react-hooks/incompatible-library -- opted out via "use no memo"
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-150">
-        <thead>
-          {table.getHeaderGroups().map(headerGroup => (
-            <tr key={headerGroup.id} className="border-b">
-              {headerGroup.headers.map(header => (
-                <th
-                  key={header.id}
-                  className="text-muted-foreground/70 px-4 py-2.5 text-left text-[11px] font-medium tracking-wide uppercase"
-                  style={{ width: header.getSize() }}
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row, i) => (
-            <tr
-              key={row.id}
-              className={`hover:bg-muted/40 transition-colors ${
-                i < table.getRowModel().rows.length - 1
-                  ? 'border-border/50 border-b'
-                  : ''
-              }`}
-            >
-              {row.getVisibleCells().map(cell => (
-                <td
-                  key={cell.id}
-                  className="px-4 py-3 align-top"
-                  style={{ width: cell.column.getSize() }}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex items-center gap-1.5">
+      {failedCount > 0 ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 rounded-full border border-[#FF453A]/20 bg-[#FF453A]/6 text-xs font-medium text-[#cc2218] hover:bg-[#FF453A]/12 dark:border-[#FF453A]/20 dark:bg-[#FF453A]/10 dark:text-[#FF453A] dark:hover:bg-[#FF453A]/18"
+          onClick={() =>
+            retryAllFailed.mutate(batchId, {
+              onSuccess: () => toast.success('Retrying failed images...'),
+              onError: () => toast.error('Failed to retry'),
+            })
+          }
+          disabled={retryAllFailed.isPending}
+        >
+          {retryAllFailed.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3 w-3" />
+          )}
+          Retry Failed
+        </Button>
+      ) : null}
+      {!hideActions && onResizeAll ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={
+            allResized
+              ? 'h-7 gap-1.5 rounded-full border border-[#30D158]/20 bg-[#30D158]/10 text-xs font-medium text-[#1a8c3a] dark:border-[#30D158]/20 dark:bg-[#30D158]/15 dark:text-[#30D158]'
+              : 'h-7 gap-1.5 rounded-full border border-black/10 bg-black/4 text-xs font-medium text-gray-600 hover:bg-black/8 dark:border-white/10 dark:bg-white/6 dark:text-gray-300 dark:hover:bg-white/10'
+          }
+          onClick={() =>
+            onResizeAll(ids =>
+              setResizedIds(prev => new Set([...prev, ...ids]))
+            )
+          }
+          disabled={resizing || allResized}
+        >
+          {resizing ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : allResized ? (
+            <CheckCircle2 className="h-3 w-3" />
+          ) : (
+            <Maximize2 className="h-3 w-3" />
+          )}
+          {allResized ? 'All Resized' : 'Resize All 1080×1350'}
+        </Button>
+      ) : null}
+      {!hideActions ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 rounded-full border border-[#0A84FF]/20 bg-[#0A84FF]/6 text-xs font-medium text-[#0060d1] hover:bg-[#0A84FF]/12 dark:border-[#0A84FF]/20 dark:bg-[#0A84FF]/10 dark:text-[#0A84FF] dark:hover:bg-[#0A84FF]/18"
+          onClick={() => (onExport ? onExport(batchId) : downloadCSV(batchId))}
+        >
+          <Download className="h-3 w-3" />
+          Export CSV
+        </Button>
+      ) : null}
     </div>
   );
 }
 
-/* ── Main Table ───────────────────────────────────────────── */
+/* ── Main Component ──────────────────────────────────────── */
 
-export function BatchResultsTable({ batch, batchId }: BatchResultsTableProps) {
+export function BatchResultsTable({
+  images,
+  targetLanguages,
+  batchId,
+  retryImageHook,
+  retryAllFailedHook,
+  updateCaptionHook,
+  onExport,
+  onResizeAll,
+  onResizeSingle,
+  resizing,
+  hideActions,
+  sourceLanguage,
+}: BatchResultsTableProps) {
   const [lightbox, setLightbox] = useState<{
     src: string;
     alt: string;
+    caption?: string;
+    imageId?: string;
+    lang?: string;
   } | null>(null);
-  const retryAllFailed = useRetryAllFailed();
+  const [resizedIds, setResizedIds] = useState<Set<string>>(new Set());
+  const defaultRetryImage = useRetryBatchImage();
+  const defaultRetryAllFailed = useRetryAllFailed();
+  const defaultUpdateCaption = useUpdateCaption();
 
-  const completedCount = batch.images.reduce(
+  const retryImage = retryImageHook ?? defaultRetryImage;
+  const retryAllFailed = retryAllFailedHook ?? defaultRetryAllFailed;
+  const updateCaption = updateCaptionHook ?? defaultUpdateCaption;
+
+  const allCompletedTranslationIds = images.flatMap(img =>
+    img.translations
+      .filter(t => t.status === 'completed' && t.translated_image_url)
+      .map(t => t.translation_id)
+  );
+  const allResized =
+    allCompletedTranslationIds.length > 0 &&
+    allCompletedTranslationIds.every(id => resizedIds.has(id));
+
+  const completedCount = images.reduce(
     (acc, img) =>
       acc + img.translations.filter(t => t.status === 'completed').length,
     0
   );
-  const failedCount = batch.images.reduce(
+  const failedCount = images.reduce(
     (acc, img) =>
       acc + img.translations.filter(t => t.status === 'failed').length,
     0
   );
+  const totalTranslations = images.length * targetLanguages.length;
 
-  const openLightbox = useCallback((src: string, alt: string) => {
-    setLightbox({ src, alt });
-  }, []);
-
-  const columns = useMemo(() => {
-    const cols = [
-      columnHelper.display({
-        id: 'index',
-        header: '#',
-        size: 44,
-        cell: info => (
-          <span className="text-muted-foreground/60 text-[13px] tabular-nums">
-            {info.row.index + 1}
-          </span>
-        ),
-      }),
-      columnHelper.display({
-        id: 'original',
-        header: 'Original',
-        size: 72,
-        cell: info => {
-          const img = info.row.original;
-          const src = img.original_image_url
-            ? getImageUrl(img.original_image_url)
-            : null;
-          return src ? (
-            <button
-              onClick={() => openLightbox(src, img.original_filename)}
-              className="group/orig bg-muted relative h-11 w-11 cursor-pointer overflow-hidden rounded-lg ring-1 ring-black/5 transition-shadow hover:shadow-md dark:ring-white/10"
-            >
-              <Image
-                src={src}
-                alt={img.original_filename}
-                fill
-                className="object-cover transition-transform group-hover/orig:scale-105"
-                unoptimized
-                loading="lazy"
-                sizes="44px"
-              />
-            </button>
-          ) : (
-            <div className="bg-muted/60 flex h-11 w-11 items-center justify-center rounded-lg">
-              <ImageIcon className="text-muted-foreground/40 h-4 w-4" />
-            </div>
-          );
-        },
-      }),
-      columnHelper.accessor('caption', {
-        header: 'Caption',
-        size: 200,
-        cell: info => {
-          const val = info.getValue();
-          return (
-            <p
-              className="line-clamp-2 max-w-50 text-[13px] leading-snug"
-              title={val ?? undefined}
-            >
-              {val || (
-                <span className="text-muted-foreground/50 italic">
-                  No caption
-                </span>
-              )}
-            </p>
-          );
-        },
-      }),
-      ...batch.target_languages.map(lang =>
-        columnHelper.display({
-          id: `lang_${lang}`,
-          header: () => (
-            <span className="whitespace-nowrap">{getLangName(lang)}</span>
-          ),
-          size: 200,
-          cell: info => {
-            const img = info.row.original;
-            const translation = img.translations.find(
-              t => t.target_lang === lang
-            );
-            return (
-              <LanguageCell
-                translation={translation}
-                imageId={img.image_id}
-                batchId={batchId}
-                onImageClick={openLightbox}
-              />
-            );
-          },
-        })
-      ),
-    ];
-    return cols;
-  }, [batch.target_languages, batchId, openLightbox]);
+  const openLightbox = useCallback(
+    (
+      src: string,
+      alt: string,
+      caption?: string,
+      imageId?: string,
+      lang?: string
+    ) => {
+      setLightbox({ src, alt, caption, imageId, lang });
+    },
+    []
+  );
 
   return (
-    <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md">
+    <Card className="overflow-hidden border-black/6 bg-white shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
       {/* Header */}
-      <CardHeader className="pb-0">
+      <CardHeader className="border-b border-black/6 bg-black/2 px-5 py-4 dark:border-white/8 dark:bg-white/3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <CardTitle className="text-base">Results</CardTitle>
-            <div className="text-muted-foreground flex items-center gap-2 text-[13px]">
-              <span>{batch.images.length} images</span>
-              <span className="text-muted-foreground/30">/</span>
-              <span>{batch.target_languages.length} languages</span>
+            <CardTitle className="text-sm font-semibold">Results</CardTitle>
+            <div className="flex items-center gap-1.5">
+              <span className="rounded-full bg-[#0A84FF]/10 px-2 py-0.5 text-xs font-medium text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]">
+                {images.length} {images.length === 1 ? 'image' : 'images'}
+              </span>
+              <span className="rounded-full bg-black/6 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-white/8 dark:text-gray-300">
+                {targetLanguages.length}{' '}
+                {targetLanguages.length === 1 ? 'language' : 'languages'}
+              </span>
               {completedCount > 0 ? (
-                <>
-                  <span className="text-muted-foreground/30">/</span>
-                  <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-3 w-3" />
-                    {completedCount}
-                  </span>
-                </>
+                <span className="flex items-center gap-1 rounded-full bg-[#30D158]/10 px-2 py-0.5 text-xs font-medium text-[#1a8c3a] dark:bg-[#30D158]/15 dark:text-[#30D158]">
+                  <CheckCircle2 className="h-3 w-3" />
+                  {completedCount}/{totalTranslations}
+                </span>
               ) : null}
               {failedCount > 0 ? (
-                <>
-                  <span className="text-muted-foreground/30">/</span>
-                  <span className="text-destructive flex items-center gap-1">
-                    <XCircle className="h-3 w-3" />
-                    {failedCount}
-                  </span>
-                </>
+                <span className="flex items-center gap-1 rounded-full bg-[#FF453A]/10 px-2 py-0.5 text-xs font-medium text-[#cc2218] dark:bg-[#FF453A]/15 dark:text-[#FF453A]">
+                  <XCircle className="h-3 w-3" />
+                  {failedCount} failed
+                </span>
               ) : null}
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {failedCount > 0 ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 rounded-lg text-[13px]"
-                onClick={() =>
-                  retryAllFailed.mutate(batchId, {
-                    onSuccess: () => toast.success('Retrying failed images...'),
-                    onError: () => toast.error('Failed to retry'),
-                  })
-                }
-                disabled={retryAllFailed.isPending}
-              >
-                {retryAllFailed.isPending ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                )}
-                Retry Failed
-              </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-lg text-[13px]"
-              onClick={() => downloadCSV(batchId)}
-            >
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Export
-            </Button>
-          </div>
+          <ResultsHeaderActions
+            failedCount={failedCount}
+            hideActions={hideActions}
+            allResized={allResized}
+            resizing={resizing}
+            batchId={batchId}
+            retryAllFailed={retryAllFailed}
+            onResizeAll={onResizeAll}
+            onExport={onExport}
+            setResizedIds={setResizedIds}
+          />
+        </div>
+
+        {/* Hint bar for VA */}
+        <div className="mt-3 flex items-center gap-2 rounded-lg bg-black/3 px-3 py-2 dark:bg-white/4">
+          <MousePointerClick className="h-3.5 w-3.5 shrink-0 text-[#0A84FF]" />
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            Click any image to preview full-size and edit its caption
+          </span>
         </div>
       </CardHeader>
 
-      {/* Table */}
-      <CardContent className="px-0 pb-0">
-        <ResultsTableBody
-          data={batch.images}
-          columns={columns as ColumnDef<ImageResult, unknown>[]}
-        />
+      <CardContent className="p-0">
+        {/* Scrollable grid */}
+        <div className="overflow-x-auto">
+          <div
+            className="grid min-w-fit"
+            style={{
+              gridTemplateColumns: `repeat(${targetLanguages.length + 1}, minmax(180px, 1fr))`,
+            }}
+          >
+            {/* Column headers */}
+            <div className="border-b border-black/6 bg-black/3 px-3 py-3 dark:border-white/8 dark:bg-white/4">
+              {sourceLanguage && sourceLanguage !== 'auto' ? (
+                <div className="flex items-center gap-1.5">
+                  <code className="rounded bg-black/8 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-400">
+                    {sourceLanguage}
+                  </code>
+                  <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">
+                    {getLangName(sourceLanguage)}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[11px] font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-500">
+                  Original
+                </span>
+              )}
+            </div>
+            {targetLanguages.map(lang => (
+              <div
+                key={lang}
+                className="border-b border-black/6 bg-black/3 px-3 py-3 text-center dark:border-white/8 dark:bg-white/4"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <code className="rounded bg-[#0A84FF]/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]">
+                    {lang}
+                  </code>
+                  <span className="text-[11px] font-medium text-gray-600 dark:text-gray-300">
+                    {getLangName(lang)}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {/* Image rows */}
+            {images.map((image, i) => {
+              const filename = image.original_filename || `Image ${i + 1}`;
+              const originalSrc = image.original_image_url
+                ? getImageUrl(image.original_image_url)
+                : null;
+
+              return [
+                /* Original column */
+                <div
+                  key={`orig-${image.image_id}`}
+                  className={`border-b border-black/4 px-3 py-3 dark:border-white/5 ${i % 2 === 1 ? 'bg-black/2 dark:bg-white/2' : ''}`}
+                >
+                  {originalSrc ? (
+                    <button
+                      onClick={() =>
+                        openLightbox(
+                          originalSrc,
+                          filename,
+                          image.caption ?? undefined
+                        )
+                      }
+                      className="group/orig relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-xl ring-1 ring-black/5 transition-all hover:shadow-lg hover:ring-2 hover:ring-[#0A84FF]/30 dark:ring-white/10 dark:hover:ring-[#0A84FF]/40"
+                    >
+                      <Image
+                        src={originalSrc}
+                        alt={filename}
+                        fill
+                        className="object-cover transition-transform duration-200 group-hover/orig:scale-[1.03]"
+                        unoptimized
+                        loading="lazy"
+                        sizes="180px"
+                      />
+                      {/* Filename badge */}
+                      <div className="absolute top-2 left-2">
+                        <span className="rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow backdrop-blur-sm">
+                          {i + 1}
+                        </span>
+                      </div>
+                      {/* Filename overlay at bottom */}
+                      <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/70 to-transparent px-2 pt-5 pb-2">
+                        <span className="block truncate text-[11px] font-medium text-white drop-shadow">
+                          {filename}
+                        </span>
+                      </div>
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-200 group-hover/orig:bg-black/20">
+                        <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 opacity-0 shadow-lg backdrop-blur-sm transition-all duration-200 group-hover/orig:opacity-100 dark:bg-black/70">
+                          <Eye className="h-3.5 w-3.5 text-gray-800 dark:text-white" />
+                          <span className="text-[11px] font-medium text-gray-800 dark:text-white">
+                            View Original
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  ) : (
+                    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-black/4 dark:bg-white/4">
+                      <ImageIcon className="h-8 w-8 text-gray-300 dark:text-gray-600" />
+                    </div>
+                  )}
+                </div>,
+
+                /* Translation columns */
+                ...targetLanguages.map(lang => {
+                  const translation = image.translations.find(
+                    t => t.target_lang === lang
+                  );
+                  return (
+                    <div
+                      key={`${image.image_id}-${lang}`}
+                      className={`border-b border-black/4 px-3 py-3 dark:border-white/5 ${i % 2 === 1 ? 'bg-black/2 dark:bg-white/2' : ''}`}
+                    >
+                      {translation ? (
+                        <TranslationTile
+                          translation={translation}
+                          imageId={image.image_id}
+                          batchId={batchId}
+                          onImageClick={openLightbox}
+                          retryImage={retryImage}
+                          onResize={
+                            onResizeSingle
+                              ? (translationId, onSuccess) =>
+                                  onResizeSingle(translationId, () => {
+                                    setResizedIds(
+                                      prev => new Set([...prev, translationId])
+                                    );
+                                    onSuccess();
+                                  })
+                              : undefined
+                          }
+                          resizing={resizing}
+                          isResized={resizedIds.has(translation.translation_id)}
+                        />
+                      ) : (
+                        <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-black/3 dark:bg-white/3">
+                          <span className="text-xs text-gray-300 dark:text-gray-600">
+                            —
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }),
+              ];
+            })}
+          </div>
+        </div>
       </CardContent>
 
       {/* Lightbox */}
@@ -538,8 +732,26 @@ export function BatchResultsTable({ batch, batchId }: BatchResultsTableProps) {
         <ImageLightbox
           src={lightbox.src}
           alt={lightbox.alt}
+          caption={lightbox.caption}
           open={!!lightbox}
           onOpenChange={open => !open && setLightbox(null)}
+          onSaveCaption={
+            lightbox.imageId && lightbox.lang
+              ? caption =>
+                  updateCaption.mutate(
+                    {
+                      batchId,
+                      imageId: lightbox.imageId!,
+                      lang: lightbox.lang!,
+                      caption,
+                    },
+                    {
+                      onSuccess: () => toast.success('Caption saved'),
+                      onError: () => toast.error('Failed to save caption'),
+                    }
+                  )
+              : undefined
+          }
         />
       ) : null}
     </Card>

@@ -117,7 +117,24 @@ export function BatchDetailContent({ batchId }: BatchDetailContentProps) {
       ) : null}
 
       {!isProcessing && !isExpired && merged.images.length > 0 ? (
-        <BatchResultsTable batch={merged} batchId={batchId} />
+        <BatchResultsTable
+          images={merged.images}
+          targetLanguages={merged.target_languages}
+          sourceLanguage={(() => {
+            if (merged.source_language && merged.source_language !== 'auto') {
+              return merged.source_language;
+            }
+            const detected = [
+              ...new Set(
+                merged.images
+                  .map(img => img.detected_source_language)
+                  .filter(Boolean)
+              ),
+            ];
+            return detected.length === 1 ? (detected[0] as string) : undefined;
+          })()}
+          batchId={batchId}
+        />
       ) : (
         <BatchDetailImages
           batch={merged}

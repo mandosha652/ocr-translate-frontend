@@ -1,15 +1,13 @@
-import { Languages } from 'lucide-react';
 import Link from 'next/link';
+
+import { Logo } from '@/components/ui/Logo';
 
 export function TermsFooter() {
   return (
     <footer className="border-t">
       <div className="container mx-auto max-w-6xl px-4 py-6">
         <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
-          <div className="flex items-center gap-2">
-            <Languages className="h-5 w-5" />
-            <span className="font-semibold">ImgText</span>
-          </div>
+          <Logo size="sm" />
           <div className="text-muted-foreground flex gap-4 text-sm">
             <Link href="/terms" className="hover:underline">
               Terms

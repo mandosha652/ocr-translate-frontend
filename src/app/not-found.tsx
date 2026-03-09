@@ -1,15 +1,12 @@
-import { Languages } from 'lucide-react';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/Logo';
 
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 px-4 text-center">
-      <div className="flex items-center gap-2">
-        <Languages className="h-6 w-6" />
-        <span className="text-xl font-semibold">ImgText</span>
-      </div>
+      <Logo size="lg" />
       <div className="space-y-2">
         <h1 className="text-6xl font-bold tracking-tight">404</h1>
         <p className="text-muted-foreground text-lg">Page not found</p>

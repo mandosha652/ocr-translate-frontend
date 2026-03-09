@@ -1,7 +1,8 @@
 'use client';
 
-import { Languages } from 'lucide-react';
 import Link from 'next/link';
+
+import { Logo } from '@/components/ui/Logo';
 
 export function HomeFooter() {
   return (
@@ -10,9 +11,8 @@ export function HomeFooter() {
         <div className="mb-12 grid gap-8 md:grid-cols-3 md:gap-12">
           {/* Brand */}
           <div>
-            <div className="mb-2 flex items-center gap-2">
-              <Languages className="text-primary h-6 w-6" />
-              <span className="text-lg font-bold">ImgText</span>
+            <div className="mb-2">
+              <Logo size="md" />
             </div>
             <p className="text-muted-foreground text-sm">
               AI-powered image translation for the global web.

@@ -2,8 +2,7 @@
 
 import {
   History,
-  Image,
-  Languages,
+  Image as ImageIcon,
   Layers,
   LayoutDashboard,
   Menu,
@@ -12,7 +11,6 @@ import {
   Sun,
   X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useState } from 'react';
@@ -23,6 +21,7 @@ import { MobileNav } from '@/components/layout/MobileNav';
 import { NotificationBell } from '@/components/layout/NotificationBell';
 import { UserDropdown } from '@/components/layout/UserDropdown';
 import { Button } from '@/components/ui/button';
+import { Logo } from '@/components/ui/Logo';
 import {
   Tooltip,
   TooltipContent,
@@ -32,7 +31,7 @@ import { useAuth } from '@/hooks';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/translate', label: 'Translate', icon: Image },
+  { href: '/translate', label: 'Translate', icon: ImageIcon },
   { href: '/batch', label: 'Batch', icon: Layers },
   { href: '/history', label: 'History', icon: History },
   { href: '/settings', label: 'Settings', icon: Settings },
@@ -67,13 +66,7 @@ export function DashboardNav() {
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <div className="flex items-center gap-4 md:gap-8">
-          <Link
-            href="/dashboard"
-            className="focus-visible:ring-ring/50 flex items-center gap-2 rounded focus-visible:ring-2 focus-visible:outline-none"
-          >
-            <Languages className="h-6 w-6" />
-            <span className="text-lg font-semibold sm:text-xl">ImgText</span>
-          </Link>
+          <Logo href="/dashboard" size="lg" />
           <DesktopNav navItems={navItems} pathname={pathname} />
         </div>
 

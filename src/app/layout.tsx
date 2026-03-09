@@ -44,6 +44,11 @@ export const metadata: Metadata = {
     description:
       'Translate text in images instantly using AI-powered OCR and translation.',
   },
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+    shortcut: '/favicon.ico',
+  },
   robots: {
     index: true,
     follow: true,

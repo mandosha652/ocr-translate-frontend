@@ -1,6 +1,6 @@
-import { Languages } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
+
+import { Logo } from '@/components/ui/Logo';
 
 export const metadata: Metadata = {
   robots: {
@@ -17,10 +17,7 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container mx-auto flex h-16 max-w-6xl items-center px-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Languages className="h-6 w-6" />
-          <span className="text-xl font-semibold">ImgText</span>
-        </Link>
+        <Logo href="/" size="lg" />
       </header>
       <main className="flex flex-1 items-center justify-center px-4 py-12">
         {children}

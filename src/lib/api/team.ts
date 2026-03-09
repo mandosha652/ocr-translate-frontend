@@ -15,6 +15,7 @@ import type {
   TeamBatchListResponse,
   TeamBatchStatus,
   TeamLoginResponse,
+  TeamQuickTranslateResponse,
 } from '@/types';
 
 const TEAM_TOKEN_KEY = 'team-token';
@@ -106,10 +107,58 @@ export const teamApi = {
     }
   },
 
+  /**
+   * Quick-translate a single image (file upload or URL).
+   * Sends as multipart/form-data with optional image file.
+   */
+  async quickTranslate(params: {
+    file?: File;
+    imageUrl?: string;
+    caption?: string;
+    sourceLang: string;
+    targetLangs: string[];
+    excludeText?: string;
+    removeLogo?: boolean;
+  }): Promise<TeamQuickTranslateResponse> {
+    const form = new FormData();
+    if (params.file) {
+      form.append('file', params.file);
+    }
+    if (params.imageUrl) {
+      form.append('image_url', params.imageUrl);
+    }
+    if (params.caption) {
+      form.append('caption', params.caption);
+    }
+    form.append('source_lang', params.sourceLang);
+    form.append('target_langs', params.targetLangs.join(','));
+    if (params.excludeText) {
+      form.append('exclude_text', params.excludeText);
+    }
+    if (params.removeLogo) {
+      form.append('remove_logo', 'true');
+    }
+    const { data } = await teamClient.post<TeamQuickTranslateResponse>(
+      TEAM_ENDPOINTS.QUICK_TRANSLATE,
+      form,
+      { headers: { 'Content-Type': undefined } }
+    );
+    return data;
+  },
+
   /** Upload a CSV file and kick off the batch. */
-  async uploadCsv(file: File): Promise<TeamBatchCreateResponse> {
+  async uploadCsv(
+    file: File,
+    options?: { excludeText?: string; removeLogo?: boolean }
+  ): Promise<TeamBatchCreateResponse> {
     const form = new FormData();
     form.append('file', file);
+    if (options?.excludeText) {
+      form.append('exclude_text', options.excludeText);
+    }
+    if (options?.removeLogo) {
+      form.append('remove_logo', 'true');
+    }
     const { data } = await teamClient.post<TeamBatchCreateResponse>(
       TEAM_ENDPOINTS.CSV_UPLOAD,
       form,
@@ -153,6 +202,110 @@ export const teamApi = {
     const { data } = await teamClient.post<TeamBatchCancelResponse>(
       TEAM_ENDPOINTS.BATCH_CANCEL(id)
     );
+    return data;
+  },
+
+  /** Retry a single failed image. */
+  async retryImage(
+    batchId: string,
+    imageId: string
+  ): Promise<{ status: string }> {
+    const { data } = await teamClient.post<{ status: string }>(
+      `/api/v1/team/batch/${batchId}/image/${imageId}/retry`
+    );
+    return data;
+  },
+
+  /** Retry all failed images in a batch. */
+  async retryAllFailed(
+    batchId: string
+  ): Promise<{ status: string; retried_count: number }> {
+    const { data } = await teamClient.post<{
+      status: string;
+      retried_count: number;
+    }>(`/api/v1/team/batch/${batchId}/retry-failed`);
+    return data;
+  },
+
+  /** Update a translated caption. */
+  async updateCaption(
+    batchId: string,
+    imageId: string,
+    lang: string,
+    caption: string
+  ): Promise<{ status: string }> {
+    const { data } = await teamClient.patch<{ status: string }>(
+      `/api/v1/team/batch/${batchId}/caption`,
+      { image_id: imageId, lang, caption }
+    );
+    return data;
+  },
+
+  /**
+   * Open an SSE stream for batch progress.
+   *
+   * EventSource doesn't support Authorization headers, so the JWT is sent
+   * as a `token` query parameter. The backend reads it via the standard
+   * bearer token fallback.
+   *
+   * @param id       Batch ID to stream
+   * @param onEvent  Called on each progress event
+   * @param onDone   Called when the batch reaches a terminal state
+   * @param onError  Called on connection error
+   * @returns        Cleanup function — call it to close the stream
+   */
+  streamBatchProgress(
+    id: string,
+    onEvent: (event: {
+      batch_id: string;
+      status: string;
+      total_images: number;
+      completed_count: number;
+      failed_count: number;
+      total_translations: number;
+      completed_translations: number;
+      done: boolean;
+    }) => void,
+    onDone: () => void,
+    onError?: (err: Event) => void
+  ): () => void {
+    const token = teamTokenStorage.get();
+    const url = `${API_BASE_URL}${TEAM_ENDPOINTS.BATCH_STREAM(id)}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const es = new EventSource(url);
+
+    es.onmessage = e => {
+      try {
+        const data = JSON.parse(e.data as string);
+        onEvent(data);
+        if (data.done) {
+          es.close();
+          onDone();
+        }
+      } catch {
+        // ignore malformed frames
+      }
+    };
+
+    es.onerror = err => {
+      es.close();
+      onError?.(err);
+    };
+
+    return () => es.close();
+  },
+
+  /** Resize translated images to 1080×1350. Pass null for all. */
+  async resizeTranslations(
+    batchId: string,
+    translationIds: string[] | null
+  ): Promise<{ status: string; resized_count: number; errors: string[] }> {
+    const { data } = await teamClient.post<{
+      status: string;
+      resized_count: number;
+      errors: string[];
+    }>(`/api/v1/team/batch/${batchId}/resize`, {
+      translation_ids: translationIds,
+    });
     return data;
   },
 };

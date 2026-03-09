@@ -24,6 +24,7 @@ export interface ImageResult {
   status: ImageStatus;
   original_image_url: string | null;
   caption: string | null;
+  detected_source_language: string | null;
   translations: TranslationOutput[];
   error: string | null;
 }

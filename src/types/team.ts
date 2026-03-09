@@ -32,6 +32,8 @@ export type CaptionsStatus = 'pending' | 'processing' | 'completed' | 'failed';
 
 export interface TeamBatchStatus extends TeamBatchSummary {
   captions_status: CaptionsStatus;
+  total_translations?: number;
+  completed_translations?: number;
   images?: ImageResult[];
 }
 
@@ -39,4 +41,10 @@ export interface TeamBatchCancelResponse {
   batch_id: string;
   status: BatchStatus;
   message: string;
+}
+
+export interface TeamQuickTranslateResponse {
+  batch_id: string;
+  image_count: number;
+  status: BatchStatus;
 }

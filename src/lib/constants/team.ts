@@ -8,6 +8,7 @@ export const TEAM_ENDPOINTS = {
   BATCH_STREAM: (id: string) => `/api/v1/team/batch/${id}/stream`,
   BATCH_CANCEL: (id: string) => `/api/v1/team/batch/${id}/cancel`,
   BATCH_EXPORT: (id: string) => `/api/v1/team/batch/${id}/export`,
+  BATCH_UPLOAD: '/api/v1/batch/translate',
 } as const;
 
 export const TEAM_SLUG = process.env.NEXT_PUBLIC_TEAM_SLUG || '';

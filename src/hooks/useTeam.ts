@@ -1,6 +1,11 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
@@ -94,20 +99,54 @@ export function useTeamUploadCsv() {
 }
 
 // ---------------------------------------------------------------------------
+// Batch upload (images or URLs)
+// ---------------------------------------------------------------------------
+
+export function useTeamBatchUpload() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (params: {
+      input: { files: File[] } | { imageUrls: string[] };
+      targetLanguages: string[];
+      sourceLang?: string;
+      excludeText?: string;
+      removeLogo?: boolean;
+    }) =>
+      teamApi.uploadBatch(params.input, params.targetLanguages, {
+        sourceLang: params.sourceLang,
+        excludeText: params.excludeText,
+        removeLogo: params.removeLogo,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['team-batches'] });
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Batch list
 // ---------------------------------------------------------------------------
 
+const BATCHES_PAGE_SIZE = 10;
+
 export function useTeamBatches() {
   const hasToken = useHasTeamToken();
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ['team-batches'],
-    queryFn: () => teamApi.listBatches(),
+    queryFn: ({ pageParam = 0 }) =>
+      teamApi.listBatches({ limit: BATCHES_PAGE_SIZE, offset: pageParam }),
+    initialPageParam: 0,
+    getNextPageParam: lastPage => {
+      const nextOffset = lastPage.offset + lastPage.limit;
+      return nextOffset < lastPage.total ? nextOffset : undefined;
+    },
     enabled: hasToken,
     staleTime: 10_000,
     refetchInterval: query => {
-      const batches = query.state.data?.batches;
-      if (!batches) return false;
-      const hasActive = batches.some(b =>
+      const firstPage = query.state.data?.pages?.[0];
+      if (!firstPage) return false;
+      const hasActive = firstPage.batches.some(b =>
         ['pending', 'processing'].includes(b.status)
       );
       return hasActive ? BATCH_LIST_POLL_INTERVAL : false;

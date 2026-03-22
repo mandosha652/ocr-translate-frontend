@@ -35,6 +35,7 @@ import React, {
 import { toast } from 'sonner';
 
 import { BatchResultsTable } from '@/app/(dashboard)/batch/_components/BatchResultsTable';
+import { MultiImageUploader } from '@/components/features/batch/MultiImageUploader';
 import { BatchStatusCard } from '@/components/features/ops/BatchStatusCard';
 import { CsvDropzone } from '@/components/features/ops/CsvDropzone';
 import {
@@ -66,6 +67,7 @@ import {
 import {
   useTeamBatches,
   useTeamBatchStatus,
+  useTeamBatchUpload,
   useTeamCancelBatch,
   useTeamExportCsv,
   useTeamLogout,
@@ -722,9 +724,9 @@ function QuickTranslateTab({
                     {excludeText
                       .split(',')
                       .filter(k => k.trim())
-                      .map(kw => (
+                      .map((kw, i) => (
                         <span
-                          key={kw.trim()}
+                          key={`${i}-${kw.trim()}`}
                           className="inline-flex items-center rounded-md bg-[#0A84FF]/10 px-2 py-0.5 text-[10px] font-medium text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]"
                         >
                           {kw.trim()}
@@ -786,9 +788,196 @@ function QuickTranslateTab({
   );
 }
 
-/* ── New Batch Tab ───────────────────────────────────────── */
+/* ── Batch Options (shared) ─────────────────────────────── */
 
-function NewBatchTab({
+function BatchOptions({
+  excludeText,
+  onExcludeTextChange,
+  removeLogo,
+  onRemoveLogoChange,
+  disabled,
+}: {
+  excludeText: string;
+  onExcludeTextChange: (v: string) => void;
+  removeLogo: boolean;
+  onRemoveLogoChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1.5">
+        <div className="flex items-baseline justify-between">
+          <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+            Protect from translation
+          </Label>
+          {excludeText.trim() && (
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+              {excludeText.split(',').filter(k => k.trim()).length} keyword
+              {excludeText.split(',').filter(k => k.trim()).length !== 1
+                ? 's'
+                : ''}{' '}
+              protected
+            </span>
+          )}
+        </div>
+        <Input
+          placeholder="Nike, tinygardenhabit, www.brand.com"
+          value={excludeText}
+          onChange={e => onExcludeTextChange(e.target.value)}
+          disabled={disabled}
+          className="h-9 rounded-xl text-sm"
+        />
+        {excludeText.trim() ? (
+          <div className="flex flex-wrap gap-1">
+            {excludeText
+              .split(',')
+              .filter(k => k.trim())
+              .map(kw => (
+                <span
+                  key={kw.trim()}
+                  className="inline-flex items-center rounded-md bg-[#0A84FF]/10 px-2 py-0.5 text-[10px] font-medium text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]"
+                >
+                  {kw.trim()}
+                </span>
+              ))}
+          </div>
+        ) : (
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+            Text regions containing these keywords won&apos;t be translated.
+            Comma-separate multiple.
+          </p>
+        )}
+      </div>
+      <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-black/8 bg-black/2 px-3 py-2.5 transition-colors hover:bg-black/4 dark:border-white/8 dark:bg-white/3 dark:hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={removeLogo}
+          onChange={e => onRemoveLogoChange(e.target.checked)}
+          disabled={disabled}
+          className="h-4 w-4 accent-[#0A84FF]"
+        />
+        <div>
+          <span className="text-xs font-medium">
+            Remove logos &amp; watermarks
+          </span>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+            Erase brand marks from the image before translating
+          </p>
+        </div>
+      </label>
+    </div>
+  );
+}
+
+/* ── Batch Language Card (shared for images/urls) ────────── */
+
+function BatchLanguageCard({
+  sourceLang,
+  onSourceLangChange,
+  targetLangs,
+  onToggle,
+  onSelectAll,
+  onClearAll,
+}: {
+  sourceLang: string;
+  onSourceLangChange: (v: string) => void;
+  targetLangs: string[];
+  onToggle: (code: string) => void;
+  onSelectAll: () => void;
+  onClearAll: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-black/6 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
+      <div className="mb-4 flex items-center justify-between">
+        <StepBadge n={2} label="Languages" />
+        <Hint text="Source is the language in the images — auto-detect works in most cases." />
+      </div>
+      <div className="mb-4 flex items-center justify-between">
+        <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+          Source language
+        </p>
+        <Select value={sourceLang} onValueChange={onSourceLangChange}>
+          <SelectTrigger className="h-8 w-40 rounded-lg text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">
+              <span className="flex items-center gap-2">
+                <Sparkles className="h-3.5 w-3.5 text-[#0A84FF]" />
+                Auto-detect
+              </span>
+            </SelectItem>
+            {SUPPORTED_LANGUAGES.map(l => (
+              <SelectItem key={l.code} value={l.code}>
+                {l.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="h-px bg-black/5 dark:bg-white/6" />
+      <div className="mt-4 space-y-2.5">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            Translate into
+          </p>
+          {targetLangs.length > 0 && (
+            <span className="rounded-full bg-[#0A84FF]/10 px-2 py-0.5 text-[11px] font-semibold text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]">
+              {targetLangs.length} selected
+            </span>
+          )}
+        </div>
+        <LangPicker
+          targetLangs={targetLangs}
+          onToggle={onToggle}
+          onSelectAll={onSelectAll}
+          onClearAll={onClearAll}
+        />
+        {targetLangs.length === 0 && (
+          <p className="flex items-center gap-1 text-xs text-[#FF453A]">
+            <AlertCircle className="h-3 w-3" />
+            Pick at least one target language
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Batch Options Card (shared for images/urls) ─────────── */
+
+function BatchOptionsCard({
+  excludeText,
+  onExcludeTextChange,
+  removeLogo,
+  onRemoveLogoChange,
+  disabled,
+}: {
+  excludeText: string;
+  onExcludeTextChange: (v: string) => void;
+  removeLogo: boolean;
+  onRemoveLogoChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-black/6 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
+      <div className="mb-4">
+        <StepBadge n={3} label="Options (optional)" />
+      </div>
+      <BatchOptions
+        excludeText={excludeText}
+        onExcludeTextChange={onExcludeTextChange}
+        removeLogo={removeLogo}
+        onRemoveLogoChange={onRemoveLogoChange}
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+/* ── CSV Batch Mode ───────────────────────────────────────── */
+
+function CsvBatchMode({
   onBatchCreated,
 }: {
   onBatchCreated: (batchId: string) => void;
@@ -805,6 +994,8 @@ function NewBatchTab({
     const valid = await validateCsvFile(file);
     setCsvValid(valid);
   }, []);
+
+  const canSubmit = !uploading && !!selectedFile && csvValid;
 
   const handleUpload = () => {
     if (!selectedFile) return;
@@ -831,8 +1022,7 @@ function NewBatchTab({
   };
 
   return (
-    <div className="space-y-4">
-      {/* How it works */}
+    <>
       <details className="group rounded-2xl border border-black/6 bg-white shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
         <summary className="flex cursor-pointer list-none items-center justify-between p-5 select-none">
           <p className="flex items-center gap-1.5 text-[10px] font-semibold tracking-widest text-gray-400 uppercase dark:text-gray-500">
@@ -843,7 +1033,6 @@ function NewBatchTab({
         </summary>
         <div className="px-5 pb-5">
           <div className="relative grid grid-cols-3 gap-3">
-            {/* Connector lines */}
             <div className="absolute top-3.5 right-1/3 left-1/3 h-px bg-black/8 dark:bg-white/10" />
             {[
               {
@@ -878,7 +1067,6 @@ function NewBatchTab({
         </div>
       </details>
 
-      {/* Upload card */}
       <div className="rounded-2xl border border-black/6 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -916,78 +1104,20 @@ function NewBatchTab({
           disabled={uploading}
         />
 
-        {/* Options */}
         <div className="mt-4 space-y-3">
           <div className="h-px bg-black/5 dark:bg-white/6" />
           <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
             Options
           </p>
-          <div className="space-y-2">
-            <div className="space-y-1.5">
-              <div className="flex items-baseline justify-between">
-                <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                  Protect from translation
-                </Label>
-                {excludeText.trim() && (
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                    {excludeText.split(',').filter(k => k.trim()).length}{' '}
-                    keyword
-                    {excludeText.split(',').filter(k => k.trim()).length !== 1
-                      ? 's'
-                      : ''}{' '}
-                    protected
-                  </span>
-                )}
-              </div>
-              <Input
-                placeholder="Nike, tinygardenhabit, www.brand.com"
-                value={excludeText}
-                onChange={e => setExcludeText(e.target.value)}
-                disabled={uploading}
-                className="h-9 rounded-xl text-sm"
-              />
-              {excludeText.trim() ? (
-                <div className="flex flex-wrap gap-1">
-                  {excludeText
-                    .split(',')
-                    .filter(k => k.trim())
-                    .map(kw => (
-                      <span
-                        key={kw.trim()}
-                        className="inline-flex items-center rounded-md bg-[#0A84FF]/10 px-2 py-0.5 text-[10px] font-medium text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]"
-                      >
-                        {kw.trim()}
-                      </span>
-                    ))}
-                </div>
-              ) : (
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                  Text regions containing these keywords won&apos;t be
-                  translated. Comma-separate multiple.
-                </p>
-              )}
-            </div>
-            <label className="flex cursor-pointer items-center gap-2.5 rounded-xl border border-black/8 bg-black/2 px-3 py-2.5 transition-colors hover:bg-black/4 dark:border-white/8 dark:bg-white/3 dark:hover:bg-white/5">
-              <input
-                type="checkbox"
-                checked={removeLogo}
-                onChange={e => setRemoveLogo(e.target.checked)}
-                disabled={uploading}
-                className="h-4 w-4 accent-[#0A84FF]"
-              />
-              <div>
-                <span className="text-xs font-medium">
-                  Remove logos &amp; watermarks
-                </span>
-                <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                  Erase brand marks from the image before translating
-                </p>
-              </div>
-            </label>
-          </div>
+          <BatchOptions
+            excludeText={excludeText}
+            onExcludeTextChange={setExcludeText}
+            removeLogo={removeLogo}
+            onRemoveLogoChange={setRemoveLogo}
+            disabled={uploading}
+          />
         </div>
 
-        {/* Language codes reference */}
         <details className="group mt-4" open suppressHydrationWarning>
           <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors select-none hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
             <ChevronRight className="h-3.5 w-3.5 transition-transform group-open:rotate-90" />
@@ -995,7 +1125,6 @@ function NewBatchTab({
           </summary>
           <div className="mt-3 rounded-xl border border-black/5 bg-black/2 p-3 dark:border-white/6 dark:bg-white/3">
             <div className="grid grid-cols-4 gap-x-4 gap-y-2.5 text-xs">
-              {/* auto — special */}
               <div className="flex items-center gap-2">
                 <code className="rounded-md bg-[#FF9F0A]/12 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#b86e00] dark:bg-[#FF9F0A]/15 dark:text-[#FF9F0A]">
                   auto
@@ -1033,11 +1162,11 @@ function NewBatchTab({
         <Button
           className={cn(
             'mt-5 h-12 w-full rounded-xl text-sm font-semibold shadow-sm transition-all',
-            selectedFile && csvValid && !uploading
+            canSubmit
               ? 'bg-[#0A84FF] text-white shadow-sm shadow-[#0A84FF]/25 hover:bg-[#0071e3]'
               : 'cursor-not-allowed bg-black/6 text-gray-400 dark:bg-white/6 dark:text-gray-500'
           )}
-          disabled={!selectedFile || !csvValid || uploading}
+          disabled={!canSubmit}
           onClick={handleUpload}
         >
           {uploading ? (
@@ -1060,6 +1189,335 @@ function NewBatchTab({
           </p>
         ) : null}
       </div>
+    </>
+  );
+}
+
+/* ── Images Batch Mode ───────────────────────────────────── */
+
+function ImagesBatchMode({
+  onBatchCreated,
+}: {
+  onBatchCreated: (batchId: string) => void;
+}) {
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [sourceLang, setSourceLang] = useState('auto');
+  const [targetLangs, setTargetLangs] = useState<string[]>(['de']);
+  const [excludeText, setExcludeText] = useState('');
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const { mutate: uploadBatch, isPending } = useTeamBatchUpload();
+
+  const toggleLang = (code: string) =>
+    setTargetLangs(prev =>
+      prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code]
+    );
+  const selectAllLangs = () =>
+    setTargetLangs(SUPPORTED_LANGUAGES.map(l => l.code));
+  const clearAllLangs = () => setTargetLangs([]);
+
+  const canSubmit =
+    !isPending && imageFiles.length > 0 && targetLangs.length > 0;
+
+  const handleSubmit = () => {
+    uploadBatch(
+      {
+        input: { files: imageFiles },
+        targetLanguages: targetLangs,
+        sourceLang,
+        excludeText: excludeText.trim() || undefined,
+        removeLogo,
+      },
+      {
+        onSuccess: data => {
+          toast.success(`Batch created — ${data.total_images} images queued`);
+          onBatchCreated(data.batch_id);
+          setImageFiles([]);
+          setExcludeText('');
+          setRemoveLogo(false);
+        },
+        onError: () => toast.error('Failed to create batch. Please try again.'),
+      }
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-black/6 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0A84FF]/10 dark:bg-[#0A84FF]/15">
+            <ImageIcon className="h-4 w-4 text-[#0A84FF]" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Upload Images</p>
+            <p className="text-muted-foreground text-xs">
+              Drag &amp; drop or browse — JPEG, PNG, WebP, max 10 MB each
+            </p>
+          </div>
+        </div>
+        <MultiImageUploader
+          selectedFiles={imageFiles}
+          onFilesChange={setImageFiles}
+          disabled={isPending}
+          maxBatchSize={100}
+        />
+      </div>
+
+      <BatchLanguageCard
+        sourceLang={sourceLang}
+        onSourceLangChange={setSourceLang}
+        targetLangs={targetLangs}
+        onToggle={toggleLang}
+        onSelectAll={selectAllLangs}
+        onClearAll={clearAllLangs}
+      />
+
+      <BatchOptionsCard
+        excludeText={excludeText}
+        onExcludeTextChange={setExcludeText}
+        removeLogo={removeLogo}
+        onRemoveLogoChange={setRemoveLogo}
+        disabled={isPending}
+      />
+
+      <Button
+        className={cn(
+          'h-12 w-full rounded-xl text-sm font-semibold shadow-sm transition-all',
+          canSubmit
+            ? 'bg-[#0A84FF] text-white shadow-sm shadow-[#0A84FF]/25 hover:bg-[#0071e3]'
+            : 'cursor-not-allowed bg-black/6 text-gray-400 dark:bg-white/6 dark:text-gray-500'
+        )}
+        disabled={!canSubmit}
+        onClick={handleSubmit}
+      >
+        {isPending ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Uploading {imageFiles.length} images...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <UploadCloud className="h-4 w-4" />
+            Submit {imageFiles.length} Image{imageFiles.length !== 1 ? 's' : ''}
+            <ArrowRight className="ml-auto h-4 w-4 opacity-50" />
+          </span>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+/* ── URLs Batch Mode ─────────────────────────────────────── */
+
+function UrlsBatchMode({
+  onBatchCreated,
+}: {
+  onBatchCreated: (batchId: string) => void;
+}) {
+  const [urls, setUrls] = useState<string[]>(['']);
+  const [sourceLang, setSourceLang] = useState('auto');
+  const [targetLangs, setTargetLangs] = useState<string[]>(['de']);
+  const [excludeText, setExcludeText] = useState('');
+  const [removeLogo, setRemoveLogo] = useState(false);
+  const { mutate: uploadBatch, isPending } = useTeamBatchUpload();
+
+  const toggleLang = (code: string) =>
+    setTargetLangs(prev =>
+      prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code]
+    );
+  const selectAllLangs = () =>
+    setTargetLangs(SUPPORTED_LANGUAGES.map(l => l.code));
+  const clearAllLangs = () => setTargetLangs([]);
+
+  const validUrlCount = urls.filter(
+    u => u.trim() && u.trim().startsWith('http')
+  ).length;
+  const canSubmit = !isPending && validUrlCount > 0 && targetLangs.length > 0;
+
+  const handleAddUrl = () => setUrls(prev => [...prev, '']);
+  const handleRemoveUrl = (i: number) =>
+    setUrls(prev =>
+      prev.length === 1 ? [''] : prev.filter((_, idx) => idx !== i)
+    );
+  const handleUrlChange = (i: number, value: string) =>
+    setUrls(prev => {
+      const next = [...prev];
+      next[i] = value;
+      return next;
+    });
+
+  const handleSubmit = () => {
+    const validUrls = urls.map(u => u.trim()).filter(u => u.startsWith('http'));
+    uploadBatch(
+      {
+        input: { imageUrls: validUrls },
+        targetLanguages: targetLangs,
+        sourceLang,
+        excludeText: excludeText.trim() || undefined,
+        removeLogo,
+      },
+      {
+        onSuccess: data => {
+          toast.success(`Batch created — ${data.total_images} images queued`);
+          onBatchCreated(data.batch_id);
+          setUrls(['']);
+          setExcludeText('');
+          setRemoveLogo(false);
+        },
+        onError: () => toast.error('Failed to create batch. Please try again.'),
+      }
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-black/6 bg-white p-5 shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
+        <div className="mb-4 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0A84FF]/10 dark:bg-[#0A84FF]/15">
+            <Link2 className="h-4 w-4 text-[#0A84FF]" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold">Image URLs</p>
+            <p className="text-muted-foreground text-xs">
+              Paste public image URLs — one per field
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          {urls.map((url, i) => (
+            // eslint-disable-next-line react/no-array-index-key
+            <div key={`url-${i}`} className="flex gap-2">
+              <div className="relative flex-1">
+                <Link2 className="text-muted-foreground absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2" />
+                <Input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={url}
+                  onChange={e => handleUrlChange(i, e.target.value)}
+                  disabled={isPending}
+                  className="h-9 rounded-xl pl-9 text-sm"
+                />
+              </div>
+              <button
+                onClick={() => handleRemoveUrl(i)}
+                disabled={isPending}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-black/5 hover:text-gray-600 dark:hover:bg-white/8 dark:hover:text-gray-200"
+              >
+                <XCircle className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 flex items-center justify-between">
+          <button
+            onClick={handleAddUrl}
+            disabled={isPending || urls.length >= 100}
+            className="flex items-center gap-1.5 text-xs font-medium text-[#0A84FF] hover:underline disabled:opacity-40"
+          >
+            <Upload className="h-3 w-3" />
+            Add URL
+          </button>
+          <p className="text-muted-foreground text-[11px]">
+            {validUrlCount > 0 ? (
+              <>
+                <span className="font-medium text-gray-700 dark:text-gray-200">
+                  {validUrlCount}
+                </span>{' '}
+                valid URL{validUrlCount !== 1 ? 's' : ''}
+              </>
+            ) : (
+              'Paste at least one URL'
+            )}
+          </p>
+        </div>
+      </div>
+
+      <BatchLanguageCard
+        sourceLang={sourceLang}
+        onSourceLangChange={setSourceLang}
+        targetLangs={targetLangs}
+        onToggle={toggleLang}
+        onSelectAll={selectAllLangs}
+        onClearAll={clearAllLangs}
+      />
+
+      <BatchOptionsCard
+        excludeText={excludeText}
+        onExcludeTextChange={setExcludeText}
+        removeLogo={removeLogo}
+        onRemoveLogoChange={setRemoveLogo}
+        disabled={isPending}
+      />
+
+      <Button
+        className={cn(
+          'h-12 w-full rounded-xl text-sm font-semibold shadow-sm transition-all',
+          canSubmit
+            ? 'bg-[#0A84FF] text-white shadow-sm shadow-[#0A84FF]/25 hover:bg-[#0071e3]'
+            : 'cursor-not-allowed bg-black/6 text-gray-400 dark:bg-white/6 dark:text-gray-500'
+        )}
+        disabled={!canSubmit}
+        onClick={handleSubmit}
+      >
+        {isPending ? (
+          <span className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Submitting {validUrlCount} URLs...
+          </span>
+        ) : (
+          <span className="flex items-center gap-2">
+            <UploadCloud className="h-4 w-4" />
+            Submit {validUrlCount} URL{validUrlCount !== 1 ? 's' : ''}
+            <ArrowRight className="ml-auto h-4 w-4 opacity-50" />
+          </span>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+/* ── New Batch Tab ───────────────────────────────────────── */
+
+type BatchInputMode = 'csv' | 'images' | 'urls';
+
+function NewBatchTab({
+  onBatchCreated,
+}: {
+  onBatchCreated: (batchId: string) => void;
+}) {
+  const [mode, setMode] = useState<BatchInputMode>('csv');
+
+  return (
+    <div className="space-y-4">
+      {/* Mode selector */}
+      <div className="flex rounded-xl border border-black/8 p-1 dark:border-white/10">
+        {(
+          [
+            { id: 'csv' as const, icon: FileSpreadsheet, label: 'CSV' },
+            { id: 'images' as const, icon: ImageIcon, label: 'Images' },
+            { id: 'urls' as const, icon: Link2, label: 'URLs' },
+          ] as const
+        ).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setMode(tab.id)}
+            className={cn(
+              'flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all',
+              mode === tab.id
+                ? 'bg-[#0A84FF] text-white shadow-sm'
+                : 'text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white'
+            )}
+          >
+            <tab.icon className="h-3.5 w-3.5" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {mode === 'csv' && <CsvBatchMode onBatchCreated={onBatchCreated} />}
+      {mode === 'images' && <ImagesBatchMode onBatchCreated={onBatchCreated} />}
+      {mode === 'urls' && <UrlsBatchMode onBatchCreated={onBatchCreated} />}
     </div>
   );
 }
@@ -1355,6 +1813,8 @@ function BatchRow({
 
 /* ── Batches Tab ─────────────────────────────────────────── */
 
+const VISIBLE_STEP = 10;
+
 function BatchesTab({
   expandedBatchId,
   onExpandBatch,
@@ -1362,8 +1822,30 @@ function BatchesTab({
   expandedBatchId: string | null;
   onExpandBatch: (id: string | null) => void;
 }) {
-  const { data: batchList, isPending: loading, isError } = useTeamBatches();
-  const [visibleCount, setVisibleCount] = useState(10);
+  const {
+    data: batchPages,
+    isPending: loading,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useTeamBatches();
+  const [visibleCount, setVisibleCount] = useState(VISIBLE_STEP);
+
+  const handleShowMore = useCallback(() => {
+    const allLoaded = batchPages?.pages.flatMap(p => p.batches) ?? [];
+    const nextVisible = visibleCount + VISIBLE_STEP;
+    if (nextVisible > allLoaded.length && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+    setVisibleCount(nextVisible);
+  }, [
+    batchPages,
+    visibleCount,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   if (isError) {
     return (
@@ -1393,9 +1875,10 @@ function BatchesTab({
     );
   }
 
-  const batches = batchList?.batches ?? [];
+  const allBatches = batchPages?.pages.flatMap(p => p.batches) ?? [];
+  const total = batchPages?.pages[0]?.total ?? 0;
 
-  if (batches.length === 0) {
+  if (allBatches.length === 0) {
     return (
       <div className="flex flex-col items-center gap-5 py-20 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-black/5 dark:bg-white/5">
@@ -1411,14 +1894,15 @@ function BatchesTab({
     );
   }
 
-  const activeBatches = batches.filter(b =>
+  const activeBatches = allBatches.filter(b =>
     ['pending', 'processing'].includes(b.status)
   );
-  const completedBatches = batches.filter(
+  const completedBatches = allBatches.filter(
     b => !['pending', 'processing'].includes(b.status)
   );
   const visible = completedBatches.slice(0, visibleCount);
-  const hasMore = visibleCount < completedBatches.length;
+  const remaining = total - activeBatches.length - visibleCount;
+  const hasMore = remaining > 0;
 
   return (
     <div className="space-y-6">
@@ -1459,7 +1943,7 @@ function BatchesTab({
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             History
             <span className="text-muted-foreground ml-1.5 font-normal">
-              ({completedBatches.length})
+              ({total})
             </span>
           </h3>
           <div className="space-y-2">
@@ -1476,13 +1960,18 @@ function BatchesTab({
               />
             ))}
           </div>
-          {hasMore ? (
+          {isFetchingNextPage ? (
+            <div className="flex justify-center py-3">
+              <Loader2 className="text-muted-foreground/40 h-5 w-5 animate-spin" />
+            </div>
+          ) : null}
+          {hasMore && !isFetchingNextPage ? (
             <button
               className="text-muted-foreground hover:text-foreground flex w-full items-center justify-center gap-1.5 py-2 text-xs transition-colors"
-              onClick={() => setVisibleCount(prev => prev + 10)}
+              onClick={handleShowMore}
             >
               <ChevronDown className="h-3.5 w-3.5" />
-              Show more ({completedBatches.length - visibleCount} remaining)
+              Show more ({Math.max(0, remaining)} remaining)
             </button>
           ) : null}
         </div>
@@ -1524,21 +2013,22 @@ export default function TeamDashboardPage({
     setExpandedBatchId(batchId);
   }, []);
 
-  const { data: batchList } = useTeamBatches();
+  const { data: batchPages } = useTeamBatches();
+  const firstPage = batchPages?.pages?.[0];
   const notifiedRef = useRef<Set<string>>(new Set());
   const seededRef = useRef(false);
   useEffect(() => {
-    if (!batchList?.batches) return;
+    if (!firstPage?.batches) return;
     // On first load, pre-seed all existing batch IDs so we don't toast for history
     if (!seededRef.current) {
       seededRef.current = true;
-      for (const batch of batchList.batches) {
+      for (const batch of firstPage.batches) {
         notifiedRef.current.add(batch.batch_id);
       }
       return;
     }
     // On subsequent polls, only toast for newly completed batches
-    for (const batch of batchList.batches) {
+    for (const batch of firstPage.batches) {
       if (['pending', 'processing'].includes(batch.status)) continue;
       if (notifiedRef.current.has(batch.batch_id)) continue;
       notifiedRef.current.add(batch.batch_id);
@@ -1546,7 +2036,7 @@ export default function TeamDashboardPage({
         id: `batch-done-${batch.batch_id}`,
       });
     }
-  }, [batchList]);
+  }, [firstPage]);
 
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -1558,7 +2048,7 @@ export default function TeamDashboardPage({
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const hasActiveBatches = batchList?.batches?.some(b =>
+  const hasActiveBatches = firstPage?.batches?.some(b =>
     ['pending', 'processing'].includes(b.status)
   );
 
@@ -1574,8 +2064,8 @@ export default function TeamDashboardPage({
       id: 'batch',
       icon: <FileSpreadsheet className="h-4 w-4" />,
       label: 'New Batch',
-      sublabel: 'CSV upload',
-      tip: 'Upload a CSV to translate many images at once',
+      sublabel: 'CSV · Images · URLs',
+      tip: 'Create a batch from CSV, image uploads, or URLs',
     },
     {
       id: 'batches',
@@ -1593,7 +2083,7 @@ export default function TeamDashboardPage({
     },
     batch: {
       title: 'New Batch',
-      description: 'Upload a CSV file to translate many images at once',
+      description: 'Create a batch from CSV, image uploads, or public URLs',
     },
     batches: {
       title: 'Batches',

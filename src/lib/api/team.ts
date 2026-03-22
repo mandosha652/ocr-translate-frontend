@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 
 import { API_BASE_URL, TEAM_ENDPOINTS, TEAM_SLUG } from '@/lib/constants';
 import type {
+  BatchCreateResponse,
   TeamBatchCancelResponse,
   TeamBatchCreateResponse,
   TeamBatchListResponse,
@@ -167,10 +168,62 @@ export const teamApi = {
     return data;
   },
 
-  /** List all batches for the current team member. */
-  async listBatches(): Promise<TeamBatchListResponse> {
+  /**
+   * Create a batch from uploaded images or public URLs.
+   * Uses the standard batch endpoint with the team JWT.
+   */
+  async uploadBatch(
+    input: { files: File[] } | { imageUrls: string[] },
+    targetLanguages: string[],
+    options?: {
+      sourceLang?: string;
+      excludeText?: string;
+      removeLogo?: boolean;
+    }
+  ): Promise<BatchCreateResponse> {
+    const form = new FormData();
+
+    if ('files' in input) {
+      for (const file of input.files) {
+        form.append('files', file);
+      }
+    } else {
+      form.append('image_urls', input.imageUrls.join(','));
+    }
+
+    form.append('target_languages', targetLanguages.join(','));
+
+    if (options?.sourceLang && options.sourceLang !== 'auto') {
+      form.append('source_language', options.sourceLang);
+    }
+    if (options?.excludeText) {
+      form.append('exclude_text', options.excludeText);
+    }
+    if (options?.removeLogo) {
+      form.append('remove_logo', 'true');
+    }
+
+    const { data } = await teamClient.post<BatchCreateResponse>(
+      TEAM_ENDPOINTS.BATCH_UPLOAD,
+      form,
+      { headers: { 'Content-Type': undefined } }
+    );
+    return data;
+  },
+
+  /** List batches for the current team member with pagination. */
+  async listBatches(options?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<TeamBatchListResponse> {
     const { data } = await teamClient.get<TeamBatchListResponse>(
-      TEAM_ENDPOINTS.BATCH_LIST
+      TEAM_ENDPOINTS.BATCH_LIST,
+      {
+        params: {
+          limit: options?.limit ?? 10,
+          offset: options?.offset ?? 0,
+        },
+      }
     );
     return data;
   },

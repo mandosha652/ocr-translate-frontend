@@ -26,6 +26,9 @@ export interface TeamBatchSummary {
 
 export interface TeamBatchListResponse {
   batches: TeamBatchSummary[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export type CaptionsStatus = 'pending' | 'processing' | 'completed' | 'failed';

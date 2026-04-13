@@ -187,6 +187,16 @@ export interface AdminCleanupResult {
   triggered_by: string;
 }
 
+export interface AdminDevResetResponse {
+  batches_deleted: number;
+  single_translations_deleted: number;
+  usage_logs_deleted: number;
+  r2_files_deleted: number;
+  r2_errors: number;
+  queues_purged: number;
+  local_files_deleted: number;
+}
+
 export interface AdminTenantFilesWipeResponse {
   tenant_id: string;
   files_deleted: number;

@@ -22,6 +22,7 @@ import { CleanupSection } from './_components/cleanup-section';
 import { CostSection } from './_components/cost-section';
 import { type CostPeriod, CostPeriodTabs } from './_components/CostPeriodTabs';
 import { DailyCostChart } from './_components/daily-cost-chart';
+import { DevResetSection } from './_components/dev-reset-section';
 import { ServiceHealthSection } from './_components/service-health-section';
 import { SectionHeader, StatCard } from './_components/stat-card';
 
@@ -241,10 +242,11 @@ export default function AdminOverviewPage() {
       <DailyCostChart />
 
       <SectionHeader title="System" />
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <ServiceHealthSection />
         <BrokerHealthCard />
         <CleanupSection />
+        <DevResetSection />
       </div>
     </div>
   );

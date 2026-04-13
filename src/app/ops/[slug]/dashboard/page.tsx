@@ -17,6 +17,7 @@ import {
   Link2,
   Loader2,
   LogOut,
+  RefreshCw,
   Send,
   Sparkles,
   Upload,
@@ -36,17 +37,13 @@ import { toast } from 'sonner';
 
 import { BatchResultsTable } from '@/app/(dashboard)/batch/_components/BatchResultsTable';
 import { MultiImageUploader } from '@/components/features/batch/MultiImageUploader';
-import { BatchStatusCard } from '@/components/features/ops/BatchStatusCard';
 import { CsvDropzone } from '@/components/features/ops/CsvDropzone';
 import {
   CsvPreview,
   validateCsvFile,
 } from '@/components/features/ops/CsvPreview';
-import { DownloadResultsCard } from '@/components/features/ops/DownloadResultsCard';
-import { FailedImagesCard } from '@/components/features/ops/FailedImagesCard';
 import { TeamAuthGate } from '@/components/features/ops/TeamAuthGate';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/ui/Logo';
@@ -1522,9 +1519,9 @@ function NewBatchTab({
   );
 }
 
-/* ── Batch Row side card ─────────────────────────────────── */
+/* ── Batch Summary Bar (unified, replaces 2-col cards) ───── */
 
-function BatchRowSideCard({
+function BatchSummaryBar({
   batch,
   batchIsDone,
   batchIsActive,
@@ -1539,59 +1536,151 @@ function BatchRowSideCard({
 }) {
   const retryImageHook = useTeamRetryImage();
   const retryAllFailedHook = useTeamRetryAllFailed();
+  const { mutate: exportCsv, isPending: csvPending } = useTeamExportCsv(
+    batch.batch_id
+  );
   const isRetrying = retryImageHook.isPending || retryAllFailedHook.isPending;
 
-  if (batchIsDone) return <DownloadResultsCard batch={batch} />;
-
-  // Keep failed card visible while retry is in-flight (status briefly goes back to processing)
   const hasFailed =
     (batch.images?.some(img => img.status === 'failed') ?? false) ||
     batch.failed_count > 0;
-  if (hasFailed || isRetrying) {
-    return (
-      <FailedImagesCard
-        images={batch.images ?? []}
-        batchId={batch.batch_id}
-        onRetryImage={(batchId, imageId) =>
-          retryImageHook.mutate({ batchId, imageId })
-        }
-        onRetryAll={batchId => retryAllFailedHook.mutate(batchId)}
-        retrying={isRetrying}
-      />
-    );
-  }
-  if (!batchIsActive) return null;
+
+  const totalProgress = batch.total_translations ?? batch.total_images;
+  const completedProgress =
+    batch.completed_translations ?? batch.completed_count;
+  const imagesPct =
+    totalProgress > 0
+      ? Math.round((completedProgress / totalProgress) * 100)
+      : 0;
+
+  const completedTranslations = (batch.images ?? []).flatMap(img =>
+    img.translations.filter(
+      t => t.status === 'completed' && t.translated_image_url
+    )
+  );
+  const canExportCsv =
+    ['completed', 'partially_completed'].includes(batch.status) &&
+    batch.captions_status === 'completed';
+
   return (
-    <Card className="flex flex-col items-center justify-center border-black/6 bg-white shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
-      <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
-        <div className="relative flex h-12 w-12 items-center justify-center">
-          <div className="absolute h-12 w-12 animate-ping rounded-full bg-[#0A84FF]/10" />
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-black/5 dark:bg-white/8">
-            <Loader2 className="h-5 w-5 animate-spin text-[#0A84FF]" />
+    <div className="overflow-hidden rounded-2xl border border-black/6 bg-white shadow-sm dark:border-white/8 dark:bg-[#1C1C1E]">
+      {/* Header stripe */}
+      <div className="flex items-center justify-between gap-4 border-b border-black/6 bg-black/2 px-5 py-3.5 dark:border-white/8 dark:bg-white/3">
+        <div className="flex items-center gap-2.5">
+          {batchIsActive ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0A84FF]" />
+          ) : batchIsDone ? (
+            <CheckCircle2 className="h-3.5 w-3.5 text-[#30D158]" />
+          ) : batch.status === 'failed' ? (
+            <AlertCircle className="h-3.5 w-3.5 text-[#FF453A]" />
+          ) : (
+            <AlertCircle className="h-3.5 w-3.5 text-[#FF9F0A]" />
+          )}
+          <p className="text-sm font-semibold">
+            {batchIsActive
+              ? 'Processing'
+              : batchIsDone
+                ? 'Results ready'
+                : hasFailed
+                  ? 'Partially completed'
+                  : 'Completed'}
+          </p>
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">
+            {batch.target_languages.map(langName).join(' · ')}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Active: cancel */}
+          {batchIsActive ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 rounded-full border border-[#FF453A]/20 text-xs text-[#FF453A] hover:bg-[#FF453A]/8 dark:border-[#FF453A]/30 dark:hover:bg-[#FF453A]/10"
+              onClick={onCancel}
+              disabled={cancelling}
+            >
+              {cancelling ? (
+                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+              ) : (
+                <XCircle className="mr-1 h-3 w-3" />
+              )}
+              Cancel
+            </Button>
+          ) : null}
+          {/* Failed: retry */}
+          {(hasFailed || isRetrying) && !batchIsActive ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 rounded-full border border-[#FF453A]/20 bg-[#FF453A]/6 text-xs font-medium text-[#cc2218] hover:bg-[#FF453A]/12 dark:border-[#FF453A]/20 dark:bg-[#FF453A]/10 dark:text-[#FF453A]"
+              onClick={() => retryAllFailedHook.mutate(batch.batch_id)}
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}
+              Retry Failed
+            </Button>
+          ) : null}
+          {/* Done: export CSV + download */}
+          {batchIsDone && batch.total_images > 1 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1.5 rounded-full border border-[#0A84FF]/20 bg-[#0A84FF]/6 text-xs font-medium text-[#0060d1] hover:bg-[#0A84FF]/12 dark:border-[#0A84FF]/20 dark:bg-[#0A84FF]/10 dark:text-[#0A84FF]"
+              onClick={() => exportCsv()}
+              disabled={!canExportCsv || csvPending}
+            >
+              {csvPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="h-3 w-3" />
+              )}
+              Export CSV
+            </Button>
+          ) : null}
+          {batchIsDone &&
+          batch.total_images === 1 &&
+          completedTranslations.length > 0 ? (
+            <a
+              href={completedTranslations[0].translated_image_url!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-7 items-center gap-1.5 rounded-full border border-[#0A84FF]/20 bg-[#0A84FF]/6 px-2.5 text-xs font-medium text-[#0060d1] transition-colors hover:bg-[#0A84FF]/12 dark:border-[#0A84FF]/20 dark:bg-[#0A84FF]/10 dark:text-[#0A84FF]"
+            >
+              <Download className="h-3 w-3" />
+              Download
+            </a>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Progress bar — active only */}
+      {batchIsActive ? (
+        <div className="px-5 py-4">
+          <div className="mb-2 flex items-center justify-between text-xs">
+            <span className="font-medium text-gray-600 dark:text-gray-400">
+              {batch.total_images === 1 ? 'Translating' : 'Translations'}
+            </span>
+            <span className="font-semibold text-gray-500 tabular-nums">
+              {completedProgress}/{totalProgress}
+            </span>
+          </div>
+          <div className="relative h-1.5 overflow-hidden rounded-full bg-black/6 dark:bg-white/8">
+            {imagesPct === 0 ? (
+              <div className="absolute inset-0 animate-[shimmer_1.5s_ease-in-out_infinite] rounded-full bg-linear-to-r from-transparent via-[#0A84FF] to-transparent" />
+            ) : (
+              <div
+                className="h-full rounded-full bg-[#0A84FF] transition-all duration-500"
+                style={{ width: `${imagesPct}%` }}
+              />
+            )}
           </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold">Translating...</p>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            Your images are being processed. This usually takes a few minutes.
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mt-1 h-8 rounded-full border border-[#FF453A]/20 text-xs text-[#FF453A] hover:bg-[#FF453A]/8 dark:border-[#FF453A]/30 dark:hover:bg-[#FF453A]/10"
-          onClick={onCancel}
-          disabled={cancelling}
-        >
-          {cancelling ? (
-            <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
-          ) : (
-            <XCircle className="mr-1.5 h-3 w-3" />
-          )}
-          Cancel batch
-        </Button>
-      </CardContent>
-    </Card>
+      ) : null}
+    </div>
   );
 }
 
@@ -1716,9 +1805,18 @@ function BatchRow({
             </code>
             <StatusPill status={batch.status} />
             <span className="text-muted-foreground/50 hidden text-[11px] sm:inline">
-              {formatDistanceToNowStrict(new Date(batch.created_at), {
-                addSuffix: true,
-              })}
+              {(() => {
+                const createdMs = Date.parse(batch.created_at);
+                const updatedMs = Date.parse(batch.updated_at);
+                const wasRetried = updatedMs - createdMs > 5 * 60 * 1000;
+                return wasRetried
+                  ? formatDistanceToNowStrict(new Date(batch.updated_at), {
+                      addSuffix: true,
+                    })
+                  : formatDistanceToNowStrict(new Date(batch.created_at), {
+                      addSuffix: true,
+                    });
+              })()}
             </span>
           </div>
           <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -1755,22 +1853,18 @@ function BatchRow({
       {isExpanded ? (
         <div className="border-t border-black/6 dark:border-white/8">
           <div className="space-y-5 bg-black/2 p-5 dark:bg-white/2">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <BatchStatusCard batch={batch} />
-
-              <BatchRowSideCard
-                batch={batch}
-                batchIsDone={batchIsDone}
-                batchIsActive={batchIsActive}
-                cancelling={cancelling}
-                onCancel={() =>
-                  cancelBatch(batch.batch_id, {
-                    onSuccess: () => toast.success('Batch cancelled'),
-                    onError: () => toast.error('Failed to cancel'),
-                  })
-                }
-              />
-            </div>
+            <BatchSummaryBar
+              batch={batch}
+              batchIsDone={batchIsDone}
+              batchIsActive={batchIsActive}
+              cancelling={cancelling}
+              onCancel={() =>
+                cancelBatch(batch.batch_id, {
+                  onSuccess: () => toast.success('Batch cancelled'),
+                  onError: () => toast.error('Failed to cancel'),
+                })
+              }
+            />
 
             {showResults ? (
               <BatchResultsTable

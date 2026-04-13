@@ -22,6 +22,7 @@ export interface TeamBatchSummary {
   source_language: string;
   target_languages: string[];
   created_at: string;
+  updated_at: string;
 }
 
 export interface TeamBatchListResponse {

@@ -8,6 +8,7 @@ export {
   useAdminRetryImage,
 } from './admin/useAdminBatches';
 export {
+  useAdminDevReset,
   useAdminLastCleanupRun,
   useAdminRunCleanup,
   useAdminWipeTenantFiles,

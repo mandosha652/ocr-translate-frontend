@@ -79,6 +79,9 @@ export const ENDPOINTS = {
   ADMIN_CLEANUP_RUN: '/api/v1/admin/cleanup/run',
   ADMIN_CLEANUP_LAST_RUN: '/api/v1/admin/cleanup/last-run',
 
+  // Admin — Dev Reset
+  ADMIN_DEV_RESET: '/api/v1/admin/dev/reset',
+
   // Admin — GDPR
   ADMIN_TENANT_FILES: (tenantId: string) =>
     `/api/v1/admin/tenants/${tenantId}/files`,

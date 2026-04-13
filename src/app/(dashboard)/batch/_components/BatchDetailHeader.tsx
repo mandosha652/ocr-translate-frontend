@@ -1,7 +1,7 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Ban, Clock, Loader2 } from 'lucide-react';
+import { Ban, Clock, Loader2, RefreshCw } from 'lucide-react';
 
 import { getLangName } from '@/components/features/history/utils';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,17 @@ export function BatchDetailHeader({
   onCancel,
   isCancelling,
 }: BatchDetailHeaderProps) {
-  const cfg = BATCH_STATUS_CONFIG[batch.status];
+  // Defensive: if backend counted failures but still set status to "completed",
+  // show "partially_completed" so the badge always matches what results show.
+  const displayStatus =
+    batch.failed_count > 0 && batch.status === 'completed'
+      ? 'partially_completed'
+      : batch.status;
+  const cfg = BATCH_STATUS_CONFIG[displayStatus];
+
+  const createdMs = Date.parse(batch.created_at);
+  const updatedMs = Date.parse(batch.updated_at);
+  const wasRetried = updatedMs - createdMs > 5 * 60 * 1000;
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -39,6 +49,12 @@ export function BatchDetailHeader({
           <Clock className="h-3.5 w-3.5" />
           Created {format(new Date(batch.created_at), 'PPp')}
         </p>
+        {wasRetried ? (
+          <p className="text-muted-foreground flex items-center gap-1.5 text-sm">
+            <RefreshCw className="h-3.5 w-3.5" />
+            Updated {format(new Date(batch.updated_at), 'PPp')}
+          </p>
+        ) : null}
         <p className="text-muted-foreground text-sm">
           Languages:{' '}
           <span className="text-foreground font-medium">

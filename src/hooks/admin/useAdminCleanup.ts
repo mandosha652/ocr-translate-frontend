@@ -24,6 +24,16 @@ export function useAdminRunCleanup() {
   });
 }
 
+export function useAdminDevReset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => adminApi.devReset(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
+    },
+  });
+}
+
 export function useAdminWipeTenantFiles() {
   return useMutation({
     mutationFn: (tenantId: string) => adminApi.wipeTenantFiles(tenantId),

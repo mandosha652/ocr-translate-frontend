@@ -2,8 +2,9 @@ import { API_BASE_URL } from '@/lib/constants/api';
 
 export function getImageUrl(path: string): string {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
-  return `${API_BASE_URL}${path}`;
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}v=${Date.now()}`;
 }
 
 export function isValidHttpUrl(value: string): boolean {

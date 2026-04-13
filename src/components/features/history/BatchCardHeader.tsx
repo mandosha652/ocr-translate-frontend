@@ -7,6 +7,7 @@ import {
   ExternalLink,
   ImageIcon,
   Loader2,
+  RefreshCw,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -39,6 +40,10 @@ export function BatchCardHeader({
   const langList = batch.target_languages.map(getLangName).join(', ');
   const completedImages = batch.images.filter(i => i.status === 'completed');
   const isExpired = batch.is_expired;
+
+  const createdMs = Date.parse(batch.created_at);
+  const updatedMs = Date.parse(batch.updated_at);
+  const wasRetried = updatedMs - createdMs > 5 * 60 * 1000;
 
   return (
     <div
@@ -108,7 +113,16 @@ export function BatchCardHeader({
         </div>
         <p className="text-muted-foreground mt-0.5 truncate text-xs">
           <Clock className="mr-1 inline h-3 w-3" />
-          {formatDate(batch.created_at)} · {langList}
+          {formatDate(batch.created_at)}
+          {wasRetried ? (
+            <>
+              <span className="mx-1 opacity-40">·</span>
+              <RefreshCw className="mr-0.5 inline h-2.5 w-2.5" />
+              {formatDate(batch.updated_at)}
+            </>
+          ) : null}
+          <span className="mx-1 opacity-40">·</span>
+          {langList}
         </p>
       </div>
 

@@ -7,7 +7,6 @@ import {
   ImageIcon,
   Loader2,
   Maximize2,
-  MousePointerClick,
   Pencil,
   RefreshCw,
   XCircle,
@@ -63,6 +62,7 @@ function ImageLightbox({
   open,
   onOpenChange,
   onSaveCaption,
+  onRerun: _onRerun,
 }: {
   src: string;
   alt: string;
@@ -70,10 +70,11 @@ function ImageLightbox({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaveCaption?: (text: string) => void;
+  onRerun?: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-4xl sm:rounded-2xl">
+      <DialogContent className="max-h-[90vh] overflow-y-auto p-0 sm:max-w-4xl sm:rounded-2xl">
         <DialogHeader className="border-b border-black/6 bg-black/2 px-6 pt-4 pb-3.5 dark:border-white/8 dark:bg-white/3">
           <DialogTitle className="truncate text-sm font-semibold">
             {alt}
@@ -83,14 +84,11 @@ function ImageLightbox({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative aspect-[16/10] w-full bg-black/5 dark:bg-black/40">
-          <Image
+        <div className="w-full bg-black/5 dark:bg-black/40">
+          <img
             src={src}
             alt={alt}
-            fill
-            className="object-contain"
-            unoptimized
-            sizes="(max-width: 768px) 100vw, 896px"
+            className="block max-h-[70vh] w-full object-contain"
           />
         </div>
 
@@ -213,6 +211,7 @@ function TranslationTile({
   onResize,
   resizing,
   isResized,
+  onRerun,
 }: {
   translation: TranslationOutput;
   imageId: string;
@@ -222,18 +221,20 @@ function TranslationTile({
     alt: string,
     caption?: string,
     imageId?: string,
-    lang?: string
+    lang?: string,
+    onRerun?: () => void
   ) => void;
   retryImage: RetryImageMutation;
   onResize?: (translationId: string, onSuccess: () => void) => void;
   resizing?: boolean;
   isResized?: boolean;
+  onRerun?: () => void;
 }) {
   const langName = getLangName(translation.target_lang);
 
   if (translation.status === 'pending' || translation.status === 'processing') {
     return (
-      <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl bg-[#0A84FF]/8 dark:bg-[#0A84FF]/10">
+      <div className="flex aspect-[4/3] w-full animate-pulse flex-col items-center justify-center gap-2 rounded-xl bg-[#0A84FF]/8 dark:bg-[#0A84FF]/10">
         <Loader2 className="h-5 w-5 animate-spin text-[#0A84FF]" />
         <span className="text-muted-foreground text-[11px] font-medium">
           Translating...
@@ -277,7 +278,8 @@ function TranslationTile({
               `${langName} translation`,
               translation.translated_caption ?? undefined,
               imageId,
-              translation.target_lang
+              translation.target_lang,
+              onRerun
             )
           }
           className="group/thumb hover:ring-primary/30 dark:hover:ring-primary/30 relative aspect-[4/3] w-full cursor-pointer overflow-hidden rounded-xl ring-1 ring-black/5 transition-all hover:shadow-lg hover:ring-2 dark:ring-white/10"
@@ -306,47 +308,65 @@ function TranslationTile({
           <CheckCircle2 className="h-6 w-6 text-[#30D158]/50" />
         </div>
       )}
-      {onResize &&
-      translation.status === 'completed' &&
-      translation.translated_image_url ? (
-        isResized ? (
-          <div className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg bg-[#30D158]/10 py-1.5 text-[10px] font-medium text-[#1a8c3a] dark:bg-[#30D158]/15 dark:text-[#30D158]">
-            <CheckCircle2 className="h-2.5 w-2.5" />
-            1080×1350
-          </div>
-        ) : (
-          <button
-            className="mt-2 flex w-full items-center justify-center gap-1 rounded-lg bg-black/4 py-1.5 text-[10px] font-medium text-gray-500 opacity-0 transition-all group-hover/tile:opacity-100 hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
-            onClick={e => {
-              e.stopPropagation();
-              onResize(translation.translation_id, () => {});
-            }}
-            disabled={resizing}
-          >
-            {resizing ? (
-              <Loader2 className="h-2.5 w-2.5 animate-spin" />
-            ) : (
-              <Maximize2 className="h-2.5 w-2.5" />
-            )}
-            1080×1350
-          </button>
-        )
-      ) : null}
       {translation.status === 'completed' &&
       translation.translated_image_url ? (
-        <button
-          className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg bg-black/4 py-1.5 text-[10px] font-medium text-gray-500 opacity-0 transition-all group-hover/tile:opacity-100 hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
-          onClick={e => {
-            e.stopPropagation();
-            void downloadSingleImage(
-              translation.translated_image_url!,
-              translation.target_lang
-            );
-          }}
-        >
-          <Download className="h-2.5 w-2.5" />
-          Download
-        </button>
+        <div className="mt-2 flex items-center gap-1">
+          {/* Download */}
+          <button
+            title="Download"
+            className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-black/4 py-1.5 text-[10px] font-medium text-gray-500 transition-all hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+            onClick={e => {
+              e.stopPropagation();
+              void downloadSingleImage(
+                translation.translated_image_url!,
+                translation.target_lang
+              );
+            }}
+          >
+            <Download className="h-2.5 w-2.5" />
+            Download
+          </button>
+          {/* Resize */}
+          {onResize ? (
+            isResized ? (
+              <div
+                title="Resized to 1080×1350"
+                className="flex h-[29px] items-center justify-center rounded-lg bg-[#30D158]/10 px-2 text-[10px] font-medium text-[#1a8c3a] dark:bg-[#30D158]/15 dark:text-[#30D158]"
+              >
+                <CheckCircle2 className="h-2.5 w-2.5" />
+              </div>
+            ) : (
+              <button
+                title="Resize to 1080×1350"
+                className="flex h-[29px] items-center justify-center rounded-lg bg-black/4 px-2 text-[10px] font-medium text-gray-500 transition-all hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+                onClick={e => {
+                  e.stopPropagation();
+                  onResize(translation.translation_id, () => {});
+                }}
+                disabled={resizing}
+              >
+                {resizing ? (
+                  <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                ) : (
+                  <Maximize2 className="h-2.5 w-2.5" />
+                )}
+              </button>
+            )
+          ) : null}
+          {/* Re-run */}
+          {onRerun ? (
+            <button
+              title="Re-run translation"
+              className="flex h-[29px] items-center justify-center rounded-lg bg-black/4 px-2 text-[10px] font-medium text-gray-500 transition-all hover:bg-black/8 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white/5 dark:text-gray-400 dark:hover:bg-white/10 dark:hover:text-gray-200"
+              onClick={e => {
+                e.stopPropagation();
+                onRerun();
+              }}
+            >
+              <RefreshCw className="h-2.5 w-2.5" />
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );
@@ -480,6 +500,7 @@ export function BatchResultsTable({
     caption?: string;
     imageId?: string;
     lang?: string;
+    onRerun?: () => void;
   } | null>(null);
   const [resizedIds, setResizedIds] = useState<Set<string>>(new Set());
   const defaultRetryImage = useRetryBatchImage();
@@ -517,9 +538,10 @@ export function BatchResultsTable({
       alt: string,
       caption?: string,
       imageId?: string,
-      lang?: string
+      lang?: string,
+      onRerun?: () => void
     ) => {
-      setLightbox({ src, alt, caption, imageId, lang });
+      setLightbox({ src, alt, caption, imageId, lang, onRerun });
     },
     []
   );
@@ -566,14 +588,6 @@ export function BatchResultsTable({
             setResizedIds={setResizedIds}
           />
         </div>
-
-        {/* Hint bar for VA */}
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-black/3 px-3 py-2 dark:bg-white/4">
-          <MousePointerClick className="h-3.5 w-3.5 shrink-0 text-[#0A84FF]" />
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Click any image to preview full-size and edit its caption
-          </span>
-        </div>
       </CardHeader>
 
       <CardContent className="p-0">
@@ -586,7 +600,7 @@ export function BatchResultsTable({
             }}
           >
             {/* Column headers */}
-            <div className="border-b border-black/6 bg-black/3 px-3 py-3 dark:border-white/8 dark:bg-white/4">
+            <div className="sticky top-0 z-10 border-b border-black/6 bg-black/3 px-3 py-3 dark:border-white/8 dark:bg-white/4">
               {sourceLanguage && sourceLanguage !== 'auto' ? (
                 <div className="flex items-center gap-1.5">
                   <code className="rounded bg-black/8 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-gray-500 dark:bg-white/10 dark:text-gray-400">
@@ -605,7 +619,7 @@ export function BatchResultsTable({
             {targetLanguages.map(lang => (
               <div
                 key={lang}
-                className="border-b border-black/6 bg-black/3 px-3 py-3 text-center dark:border-white/8 dark:bg-white/4"
+                className="sticky top-0 z-10 border-b border-black/6 bg-black/3 px-3 py-3 text-center dark:border-white/8 dark:bg-white/4"
               >
                 <div className="flex items-center justify-center gap-1.5">
                   <code className="rounded bg-[#0A84FF]/10 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-[#0060d1] dark:bg-[#0A84FF]/15 dark:text-[#0A84FF]">
@@ -710,6 +724,12 @@ export function BatchResultsTable({
                           }
                           resizing={resizing}
                           isResized={resizedIds.has(translation.translation_id)}
+                          onRerun={() =>
+                            retryImage.mutate({
+                              batchId,
+                              imageId: image.image_id,
+                            })
+                          }
                         />
                       ) : (
                         <div className="flex aspect-[4/3] w-full items-center justify-center rounded-xl bg-black/3 dark:bg-white/3">
@@ -735,6 +755,7 @@ export function BatchResultsTable({
           caption={lightbox.caption}
           open={!!lightbox}
           onOpenChange={open => !open && setLightbox(null)}
+          onRerun={lightbox.onRerun}
           onSaveCaption={
             lightbox.imageId && lightbox.lang
               ? caption =>

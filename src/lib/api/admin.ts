@@ -9,6 +9,7 @@ import type {
   AdminCostSummary,
   AdminCreateUser,
   AdminDailyCostEntry,
+  AdminDevResetResponse,
   AdminHealthServicesResponse,
   AdminImpersonateResponse,
   AdminPaginatedResponse,
@@ -256,6 +257,13 @@ export const adminApi = {
   getLastCleanupRun: async (): Promise<AdminCleanupResult | null> => {
     const res = await adminClient.get<AdminCleanupResult | null>(
       ENDPOINTS.ADMIN_CLEANUP_LAST_RUN
+    );
+    return res.data;
+  },
+
+  devReset: async (): Promise<AdminDevResetResponse> => {
+    const res = await adminClient.post<AdminDevResetResponse>(
+      ENDPOINTS.ADMIN_DEV_RESET
     );
     return res.data;
   },
